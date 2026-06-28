@@ -34,7 +34,7 @@ function daysUntil(dateStr) {
 function expiryColor(dateStr) {
   const d = daysUntil(dateStr)
   if (d === null) return null
-  if (d < 0)  return '#9ca3af'
+  if (d < 0)  return '#ef4444'
   if (d <= 2) return '#ef4444'
   if (d <= 7) return '#f59e0b'
   return '#22c55e'
@@ -180,7 +180,7 @@ function SlotModal({ sectionId, slotIdx, slot, onClose, onUpdate }) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <span style={{ color: '#111827', fontWeight: 700, fontSize: 13 }}>{item.name}</span>
                         <span style={{ color: cat.color, fontSize: 10, fontWeight: 600 }}>{cat.label}</span>
-                        {ec && <span style={{ background: ec, color: '#fff', borderRadius: 4, padding: '1px 5px', fontSize: 9, fontWeight: 800 }}>{d < 0 ? '만료' : d === 0 ? '오늘' : `D-${d}`}</span>}
+                        {ec && <span style={{ background: ec, color: '#fff', borderRadius: 4, padding: '1px 5px', fontSize: 9, fontWeight: 800 }}>{d < 0 ? `만료 D+${Math.abs(d)}` : d === 0 ? '오늘' : `D-${d}`}</span>}
                       </div>
                       <div style={{ color: '#6b7280', fontSize: 11, marginTop: 2 }}>{item.quantity && `${item.quantity}${item.unit}`}{item.expiry && ` · ${item.expiry}`}</div>
                     </div>
