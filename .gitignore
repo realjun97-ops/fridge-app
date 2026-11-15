@@ -1,2 +1,10 @@
 node_modules
 dist
+# 로컬/배포 환경 변수 (저장소에는 .env.example 만 올립니다)
+.env
+.env.local
+.env.*.local
+# 로그 · 에디터 · OS
+*.log
+.DS_Store
+.vite
