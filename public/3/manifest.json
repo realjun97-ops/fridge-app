@@ -1,0 +1,25 @@
+{
+  "name": "3! by Realjun",
+  "short_name": "3! by Realjun",
+  "description": "3! by Realjun — 원작 Threes! 감성의 4x4 숫자 퍼즐 웹 게임",
+  "lang": "ko",
+  "start_url": "/3/",
+  "scope": "/3/",
+  "display": "standalone",
+  "background_color": "#E7EDF4",
+  "theme_color": "#EBF0F5",
+  "icons": [
+    {
+      "src": "/3/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/3/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
