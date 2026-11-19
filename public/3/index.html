@@ -339,6 +339,8 @@ body{
 .rank-row.me .rn{ color: #2E71B8; }
 .rank-empty{ padding: 20px 8px 18px; text-align: center; color: #94A3B8; font-size: 12.5px; line-height: 1.7; }
 .rank-empty .big{ display: block; font-size: 26px; margin-bottom: 6px; opacity: .8; }
+.sync-note{ min-height: 15px; margin: -2px 0 12px; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; color: #7C9DBB; text-align: center; }
+.sync-note.off{ color: #B08A6A; }
 
 /* ---------- name / save ---------- */
 .name-save{ margin: 0 0 14px; text-align: left; }
@@ -464,6 +466,7 @@ body{
       <div class="rank-head"><span>순위</span><span>이름</span><span>점수</span><span>날짜</span></div>
       <div id="rankBody"></div>
     </div>
+    <div class="sync-note" id="syncNote" aria-live="polite"></div>
     <div class="row">
       <button class="btn ghost" data-close>닫기</button>
       <button class="btn primary" id="btnRankAgain" hidden>다시 하기</button>
@@ -861,35 +864,189 @@ body{
   /* ---------------- TOP 10 records ---------------- */
   var TOP_KEY = 'threes.top10';
 
+  /* 공용 순위표 저장소(Supabase) — /3 전용 행. 냉장고(my-fridge) 행은 건드리지 않는다 */
+  var SB_URL = 'https://kjrmaxxzuwozfosniyrx.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtqcm1heHh6dXdvemZvc25peXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNTA4MjcsImV4cCI6MjA5MzgyNjgyN30.PMm3pCX1ygvQOYGLbfXxG5VuA8ELFpHnAi6pjetVQD4';
+  var SB_ROW = '3-game-top10';
+  var syncNoteEl = document.getElementById('syncNote');
+
   function escHTML(s){
     return String(s).replace(/[&<>"']/g, function(c){
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
   function cmpRec(a, b){ return b.score - a.score || b.ts - a.ts; }
+  function recKey(r){ return r.name + '|' + r.score + '|' + r.date; }
+
+  function normRec(r){
+    if (!r) return null;
+    var sc = parseInt(r.score, 10);
+    var nm = String(r.name == null ? '' : r.name).slice(0, 12).trim();
+    if (!nm || !isFinite(sc) || sc <= 0) return null;
+    return { name: nm, score: sc, date: r.date ? String(r.date).slice(0, 10) : '', ts: parseInt(r.ts, 10) || 0 };
+  }
+  function normRecs(arr){
+    var out = [];
+    if (!Array.isArray(arr)) return out;
+    for (var i = 0; i < arr.length; i++) { var r = normRec(arr[i]); if (r) out.push(r); }
+    out.sort(cmpRec);
+    return out.slice(0, 10);
+  }
+  /* 이름·점수·날짜가 같으면 같은 기록으로 보고 하나만 남긴다 */
+  function mergeRecs(){
+    var seen = {}, out = [];
+    for (var a = 0; a < arguments.length; a++) {
+      var list = arguments[a] || [];
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i], k = recKey(r);
+        if (seen[k]) continue;
+        seen[k] = 1;
+        out.push(r);
+      }
+    }
+    out.sort(cmpRec);
+    return out.slice(0, 10);
+  }
+  function sameRecs(a, b){
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (recKey(a[i]) !== recKey(b[i]) || a[i].ts !== b[i].ts) return false;
+    }
+    return true;
+  }
 
   function loadTop10(){
-    var out = [];
     try {
       var raw = localStorage.getItem(TOP_KEY);
-      if (!raw) return out;
-      var arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return out;
-      for (var i = 0; i < arr.length; i++) {
-        var r = arr[i];
-        if (!r) continue;
-        var sc = parseInt(r.score, 10);
-        var nm = String(r.name == null ? '' : r.name).slice(0, 12).trim();
-        if (!nm || !isFinite(sc) || sc <= 0) continue;
-        out.push({ name: nm, score: sc, date: r.date ? String(r.date).slice(0, 10) : '', ts: parseInt(r.ts, 10) || 0 });
-      }
-      out.sort(cmpRec);
-      return out.slice(0, 10);
+      if (!raw) return [];
+      return normRecs(JSON.parse(raw));
     } catch (e){ return []; }
   }
   function saveTop10(){ save(TOP_KEY, JSON.stringify(top10)); }
 
+  /* ---------------- 공용 순위표 (Supabase REST) ---------------- */
+  var SYNC_TXT = { loading: '불러오는 중…', synced: '전체 기기 공유 · 동기화됨', offline: '오프라인 캐시 · 이 기기에만 저장' };
+  function setSync(state){
+    if (!syncNoteEl) return;
+    syncNoteEl.textContent = SYNC_TXT[state] || '';
+    syncNoteEl.className = 'sync-note' + (state === 'offline' ? ' off' : '');
+  }
+  function sbHeaders(extra){
+    var h = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Accept': 'application/json' };
+    if (extra) for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) h[k] = extra[k];
+    return h;
+  }
+  function sbFetch(url, opts, ms){
+    if (!window.fetch) return Promise.reject(new Error('no fetch'));
+    var ctrl = null;
+    try { if (window.AbortController) { ctrl = new AbortController(); opts.signal = ctrl.signal; } } catch(e){}
+    var p = fetch(url, opts);
+    if (!ctrl) return p;
+    return new Promise(function(resolve, reject){
+      var t = setTimeout(function(){ try { ctrl.abort(); } catch(e){} reject(new Error('timeout')); }, ms || 8000);
+      p.then(function(v){ clearTimeout(t); resolve(v); }, function(e){ clearTimeout(t); reject(e); });
+    });
+  }
+  function sbRead(){
+    var url = SB_URL + '/rest/v1/fridges?id=eq.' + encodeURIComponent(SB_ROW) + '&select=sections';
+    return sbFetch(url, { method: 'GET', cache: 'no-store', headers: sbHeaders() }).then(function(res){
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function(rows){
+      if (!Array.isArray(rows) || !rows.length) return [];
+      var sec = rows[0] && rows[0].sections;
+      return normRecs(sec && sec.records);
+    });
+  }
+  function sbWrite(recs){
+    var url = SB_URL + '/rest/v1/fridges?on_conflict=id';
+    return sbFetch(url, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify({ id: SB_ROW, sections: { records: recs }, updated_at: new Date().toISOString() })
+    }).then(function(res){
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  }
+
   var top10 = loadTop10();
+  var syncSeq = 0;
+
+  function applyBestFromRecords(){
+    var top = top10.length ? top10[0].score : 0;
+    if (top > best) {
+      best = top;
+      save('threes.best', String(best));
+      bestEl.textContent = best.toLocaleString('en-US');
+    }
+  }
+
+  /* 서버 기록과 이 기기 캐시를 합쳐 순위표를 갱신한다 (서버에 없으면 합친 결과를 다시 올린다) */
+  function syncShared(highlightTs, onAfter){
+    var my = ++syncSeq;
+    setSync('loading');
+    return sbRead().then(function(serverRecs){
+      if (my !== syncSeq) return;
+      var server = normRecs(serverRecs);
+      var merged = mergeRecs(server, top10);
+      top10 = merged;
+      saveTop10();
+      applyBestFromRecords();
+      renderTop10(highlightTs);
+      if (sameRecs(merged, server)) {
+        setSync('synced');
+        if (onAfter) onAfter();
+        return;
+      }
+      return sbWrite(top10).then(function(){
+        if (my !== syncSeq) return;
+        setSync('synced');
+        if (onAfter) onAfter();
+      }, function(){
+        if (my !== syncSeq) return;
+        setSync('offline');
+        if (onAfter) onAfter();
+      });
+    }).catch(function(){
+      if (my !== syncSeq) return;
+      renderTop10(highlightTs);
+      setSync('offline');
+      if (onAfter) onAfter();
+    });
+  }
+
+  /* 새 기록 저장: 서버 최신 기록을 먼저 받아 합친 뒤 올린다 (동시 저장 충돌 방지) */
+  function saveRecordToServer(rec, onDone){
+    var my = ++syncSeq;
+    var present = function(){ return top10.some(function(r){ return recKey(r) === recKey(rec); }); };
+    setSync('loading');
+    sbRead().then(function(serverRecs){
+      if (my !== syncSeq) return;
+      var server = normRecs(serverRecs);
+      top10 = mergeRecs([rec], server, top10);
+      saveTop10();
+      applyBestFromRecords();
+      renderTop10(rec.ts);
+      var kept = present();
+      if (onDone) onDone(kept, 'pending');
+      return sbWrite(top10).then(function(){
+        if (my !== syncSeq) return;
+        setSync('synced');
+        if (onDone) onDone(kept, 'synced');
+      }, function(){
+        if (my !== syncSeq) return;
+        setSync('offline');
+        if (onDone) onDone(kept, 'offline');
+      });
+    }).catch(function(){
+      if (my !== syncSeq) return;
+      renderTop10(rec.ts);
+      setSync('offline');
+      if (onDone) onDone(present(), 'offline');
+    });
+  }
 
   function todayStr(){
     var d = new Date();
@@ -909,11 +1066,10 @@ body{
   }
   function addRecord(name, sc){
     var rec = { name: String(name).slice(0, 12), score: sc, date: todayStr(), ts: Date.now() };
-    top10.push(rec);
-    top10.sort(cmpRec);
-    top10 = top10.slice(0, 10);
+    top10 = mergeRecs([rec], top10);
     saveTop10();
-    return top10.indexOf(rec) >= 0 ? rec : null;
+    applyBestFromRecords();
+    return top10.some(function(r){ return recKey(r) === recKey(rec); }) ? rec : null;
   }
   function renderTop10(highlightTs){
     if (!rankBody) return;
@@ -934,11 +1090,12 @@ body{
     }
     rankBody.innerHTML = html;
   }
-  function openTop10(highlightTs){
+  function openTop10(highlightTs, noSync){
     renderTop10(highlightTs);
     rankAgainBtn.hidden = !over;
     topOverlay.classList.add('show');
     ac();
+    if (!noSync) syncShared(highlightTs);
   }
   function setupSaveBox(){
     var ok = qualifies(score);
@@ -963,7 +1120,9 @@ body{
         : '🏆 첫 기록을 남겨 보세요';
     }
   }
+  var saving = false, savedThisGame = false;
   function onSaveRecord(){
+    if (saving || savedThisGame) return;
     if (!qualifies(score)) return;
     var name = nameInput.value.replace(/\s+/g, ' ').trim().slice(0, 12);
     if (!name) {
@@ -975,17 +1134,44 @@ body{
       try { nameInput.focus(); } catch(e){}
       return;
     }
+    saving = true;
     save('threes.name', name);
-    var rec = addRecord(name, score);
     nameInput.value = name;
     nameInput.disabled = true;
     saveRecBtn.disabled = true;
-    saveRecBtn.textContent = '저장됨 ✓';
-    saveRecBtn.classList.add('done');
+    saveRecBtn.textContent = '저장 중…';
+    saveRecBtn.classList.remove('done');
     saveNote.classList.remove('warn');
-    saveNote.textContent = rec ? '기록을 저장했어요' : 'TOP 10 밖이에요';
+    saveNote.textContent = '전체 기기 순위표에 저장하는 중…';
     if (!muted) sfx.start();
-    openTop10(rec ? rec.ts : null);
+
+    var rec = { name: name, score: score, date: todayStr(), ts: Date.now() };
+    top10 = mergeRecs([rec], top10);
+    saveTop10();
+    applyBestFromRecords();
+
+    openTop10(rec.ts, true);
+    saveRecordToServer(rec, function(kept, state){
+      if (state === 'pending') return;
+      saving = false;
+      if (!kept) {
+        saveRecBtn.disabled = true;
+        saveRecBtn.textContent = 'TOP 10 밖';
+        saveRecBtn.classList.remove('done');
+        saveNote.textContent = '아쉬워요, TOP 10 밖이에요';
+        saveNote.classList.add('warn');
+        savedThisGame = true;
+        return;
+      }
+      savedThisGame = true;
+      saveRecBtn.disabled = true;
+      saveRecBtn.textContent = '저장됨 ✓';
+      saveRecBtn.classList.add('done');
+      saveNote.classList.remove('warn');
+      saveNote.textContent = state === 'synced'
+        ? '기록을 저장했어요 · 전체 기기 공유'
+        : '이 기기에 저장했어요 · 연결되면 자동 공유';
+    });
   }
 
   /* ---------------- game over ---------------- */
@@ -1000,6 +1186,7 @@ body{
     setupSaveBox();
     overOverlay.classList.add('show');
     sfx.over();
+    syncShared(null, function(){ if (over && !saving && !savedThisGame) setupSaveBox(); });
   }
 
   /* ---------------- preview while dragging ---------------- */
@@ -1130,6 +1317,7 @@ body{
     tilesEl.innerHTML = '';
     board = new Array(N).fill(null);
     score = 0; over = false; busy = false;
+    saving = false; savedThisGame = false;
     bestAtStart = best;
     lastSpawn = null;
     refillDeck();
@@ -1174,6 +1362,9 @@ body{
   bestEl.textContent = best.toLocaleString('en-US');
   renderTop10(null);
   resetGame();
+  syncShared(null);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) syncShared(null); });
+  window.addEventListener('online', function(){ syncShared(null); });
   window.__threes = {
     state: function(){
       return {
@@ -1204,6 +1395,12 @@ body{
     highest: highestTile,
     records: function(){
       return top10.map(function(r){ return { name: r.name, score: r.score, date: r.date, ts: r.ts }; });
+    },
+    sync: function(){ return syncShared(null); },
+    submitRecord: function(name, sc){
+      var rec = { name: String(name).slice(0, 12), score: sc, date: todayStr(), ts: Date.now() };
+      top10 = mergeRecs([rec], top10); saveTop10(); applyBestFromRecords();
+      return new Promise(function(res){ saveRecordToServer(rec, function(kept, state){ if (state !== 'pending') res({ kept: !!kept, state: state }); }); });
     },
     addRecord: function(name, sc){ var r = addRecord(name, sc); renderTop10(null); return r; },
     clearRecords: function(){ top10 = []; saveTop10(); renderTop10(null); },
