@@ -64,6 +64,19 @@ body{
 }
 .icon:active{ transform: translateY(1px) scale(.96); }
 .icon.off{ color: #A9B7C8; background: rgba(255,255,255,.55); }
+.pill{
+  height: clamp(30px, 8.4vw, 34px);
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 10px 0 9px; border: none; border-radius: 999px;
+  background: rgba(255,255,255,.92);
+  color: #5A6B82; font-family: inherit; font-weight: 800;
+  font-size: clamp(10px, 2.85vw, 11.5px); letter-spacing: .03em;
+  box-shadow: 0 2px 0 rgba(148,163,184,.55), 0 3px 8px -3px rgba(71,85,105,.45);
+  cursor: pointer; display: inline-flex; white-space: nowrap;
+  transition: transform .12s ease, background .2s;
+}
+.pill:active{ transform: translateY(1px) scale(.97); }
+.pill .cup{ font-size: 12px; line-height: 1; }
 
 /* ---------- stats ---------- */
 .stats{ display: flex; align-items: stretch; gap: 8px; }
@@ -291,7 +304,70 @@ body{
 .besttile .num[data-len="3"]{ font-size: 30px; }
 .besttile .num[data-len="4"]{ font-size: 25px; }
 .besttile .face{ width: 38px; margin-bottom: 2px; }
-.caps{ font-size: 11px; letter-spacing: .18em; color: #94A3B8; margin: 0 0 16px; text-transform: uppercase; }
+.caps{ font-size: 11px; letter-spacing: .18em; color: #94A3B8; margin: 0 0 14px; text-transform: uppercase; }
+
+/* ---------- TOP 10 ---------- */
+.rank-wrap{ margin: 0 0 14px; }
+.rank-head, .rank-row{
+  display: grid; grid-template-columns: 30px minmax(0,1fr) 64px 70px;
+  align-items: center; gap: 4px; padding: 7px 6px;
+}
+.rank-head{
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; color: #94A3B8;
+  border-bottom: 1px solid rgba(203,213,225,.9); padding-bottom: 6px;
+}
+.rank-head span:nth-child(2){ text-align: center; }
+.rank-head span:nth-child(3), .rank-head span:nth-child(4){ text-align: right; }
+.rank-row{
+  font-size: 12.5px; color: #3E4C61;
+  border-bottom: 1px dashed rgba(203,213,225,.75);
+}
+.rank-row:last-child{ border-bottom: none; }
+.rank-row .rr{ font-weight: 800; color: #7B8CA1; font-variant-numeric: tabular-nums; }
+.rank-row.r1 .rr{ color: #C2922B; }
+.rank-row.r2 .rr{ color: #8899AD; }
+.rank-row.r3 .rr{ color: #B07B4F; }
+.rank-row .rn{ font-weight: 700; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-row .rs{ font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.rank-row .rd{ font-size: 10.5px; color: #94A3B8; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.rank-row.me{
+  background: linear-gradient(180deg, rgba(102,195,255,.22), rgba(102,195,255,.10));
+  border-radius: 10px; border-bottom-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(102,195,255,.6);
+  animation: bump .55s ease-out;
+}
+.rank-row.me .rn{ color: #2E71B8; }
+.rank-empty{ padding: 20px 8px 18px; text-align: center; color: #94A3B8; font-size: 12.5px; line-height: 1.7; }
+.rank-empty .big{ display: block; font-size: 26px; margin-bottom: 6px; opacity: .8; }
+
+/* ---------- name / save ---------- */
+.name-save{ margin: 0 0 14px; text-align: left; }
+.name-save .top{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.name-save .top .lbl{ letter-spacing: .14em; }
+.save-row{ display: flex; gap: 8px; }
+.linkbtn{
+  border: none; background: none; padding: 0; margin: 0;
+  font-family: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
+  color: #5C8FC0; cursor: pointer; white-space: nowrap;
+}
+.linkbtn:active{ opacity: .6; }
+.name-input{
+  flex: 1; min-width: 0; height: 42px; padding: 0 12px;
+  border-radius: 12px; border: 1px solid #CBD5E1; background: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 700; color: #334155;
+  outline: none; box-shadow: inset 0 1px 2px rgba(100,116,139,.12);
+  -webkit-user-select: text; user-select: text;
+}
+.name-input:focus{ border-color: #66C3FF; box-shadow: 0 0 0 3px rgba(102,195,255,.26); }
+.name-input::placeholder{ color: #A9B7C8; font-weight: 600; }
+.name-input:disabled{ background: #F1F5F9; color: #A9B7C8; }
+.name-input.warn{ border-color: #FF6B81; box-shadow: 0 0 0 3px rgba(255,107,129,.2); animation: shake .26s cubic-bezier(.36,.07,.19,.97); }
+.btn.small{ min-width: 0; padding: 0 14px; height: 42px; font-size: 13px; }
+.btn:disabled{ opacity: .45; cursor: default; }
+.btn:disabled:active{ transform: none; }
+.btn.done{ color: #3F7A54; background: rgba(226,244,233,.98); box-shadow: 0 3px 0 rgba(170,206,184,.9); }
+.panel p.note{ margin: 8px 0 0; min-height: 16px; font-size: 11.5px; line-height: 1.45; color: #8496AE; text-align: center; }
+.panel p.note.warn{ color: #D9546B; }
 </style>
 </head>
 <body>
@@ -299,6 +375,7 @@ body{
   <header class="hud">
     <div class="brand"><span class="b1">3!</span><span class="b2">by Realjun</span></div>
     <div class="tools">
+      <button class="pill" id="btnTop" title="TOP 10 기록" aria-label="TOP 10 기록 보기"><span class="cup" aria-hidden="true">🏆</span>TOP 10</button>
       <button class="icon" id="btnMute" title="소리 켜기/끄기" aria-label="소리 켜기/끄기">🔊</button>
       <button class="icon" id="btnRules" title="게임 규칙" aria-label="게임 규칙">?</button>
       <button class="icon" id="btnNew" title="새 게임" aria-label="새 게임">↺</button>
@@ -365,7 +442,32 @@ body{
     </div>
     <div class="besttile" id="overTile"></div>
     <p class="caps">최고 타일</p>
+    <div class="name-save" id="saveBox">
+      <div class="top">
+        <span class="lbl">기록 남기기</span>
+        <button class="linkbtn" id="btnOverTop" type="button">🏆 TOP 10 보기</button>
+      </div>
+      <div class="save-row">
+        <input class="name-input" id="nameInput" type="text" maxlength="12" placeholder="이름 (예: 리얼준)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-label="기록자 이름">
+        <button class="btn primary small" id="btnSaveRec">기록 저장</button>
+      </div>
+      <p class="note" id="saveNote"></p>
+    </div>
     <button class="btn primary" id="btnAgain">다시 하기</button>
+  </div>
+</div>
+
+<div class="overlay" id="topOverlay" style="z-index:60">
+  <div class="panel">
+    <h2>🏆 TOP 10</h2>
+    <div class="rank-wrap">
+      <div class="rank-head"><span>순위</span><span>이름</span><span>점수</span><span>날짜</span></div>
+      <div id="rankBody"></div>
+    </div>
+    <div class="row">
+      <button class="btn ghost" data-close>닫기</button>
+      <button class="btn primary" id="btnRankAgain" hidden>다시 하기</button>
+    </div>
   </div>
 </div>
 
@@ -386,6 +488,13 @@ body{
   var rulesOverlay = document.getElementById('rulesOverlay');
   var newOverlay   = document.getElementById('newOverlay');
   var overOverlay  = document.getElementById('overOverlay');
+  var topOverlay   = document.getElementById('topOverlay');
+  var rankBody     = document.getElementById('rankBody');
+  var saveBox      = document.getElementById('saveBox');
+  var nameInput    = document.getElementById('nameInput');
+  var saveNote     = document.getElementById('saveNote');
+  var saveRecBtn   = document.getElementById('btnSaveRec');
+  var rankAgainBtn = document.getElementById('btnRankAgain');
 
   for (var i = 0; i < N; i++) {
     var c = document.createElement('div');
@@ -749,6 +858,136 @@ body{
     return true;
   }
 
+  /* ---------------- TOP 10 records ---------------- */
+  var TOP_KEY = 'threes.top10';
+
+  function escHTML(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function cmpRec(a, b){ return b.score - a.score || b.ts - a.ts; }
+
+  function loadTop10(){
+    var out = [];
+    try {
+      var raw = localStorage.getItem(TOP_KEY);
+      if (!raw) return out;
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return out;
+      for (var i = 0; i < arr.length; i++) {
+        var r = arr[i];
+        if (!r) continue;
+        var sc = parseInt(r.score, 10);
+        var nm = String(r.name == null ? '' : r.name).slice(0, 12).trim();
+        if (!nm || !isFinite(sc) || sc <= 0) continue;
+        out.push({ name: nm, score: sc, date: r.date ? String(r.date).slice(0, 10) : '', ts: parseInt(r.ts, 10) || 0 });
+      }
+      out.sort(cmpRec);
+      return out.slice(0, 10);
+    } catch (e){ return []; }
+  }
+  function saveTop10(){ save(TOP_KEY, JSON.stringify(top10)); }
+
+  var top10 = loadTop10();
+
+  function todayStr(){
+    var d = new Date();
+    function p(n){ return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '.' + p(d.getMonth() + 1) + '.' + p(d.getDate());
+  }
+  function fmtScore(v){ return v.toLocaleString('en-US'); }
+  function qualifies(sc){
+    if (!(sc > 0)) return false;
+    if (top10.length < 10) return true;
+    return sc >= top10[top10.length - 1].score;
+  }
+  function rankFor(sc){
+    var n = 0;
+    for (var i = 0; i < top10.length; i++) if (top10[i].score > sc) n++;
+    return n + 1;
+  }
+  function addRecord(name, sc){
+    var rec = { name: String(name).slice(0, 12), score: sc, date: todayStr(), ts: Date.now() };
+    top10.push(rec);
+    top10.sort(cmpRec);
+    top10 = top10.slice(0, 10);
+    saveTop10();
+    return top10.indexOf(rec) >= 0 ? rec : null;
+  }
+  function renderTop10(highlightTs){
+    if (!rankBody) return;
+    var html = '';
+    if (!top10.length) {
+      html = '<div class="rank-empty"><span class="big">🥇</span>아직 기록이 없어요.<br>게임이 끝나면 이름을 남겨 보세요.</div>';
+    } else {
+      for (var i = 0; i < top10.length; i++) {
+        var r = top10[i];
+        var cls = 'rank-row' + (i < 3 ? ' r' + (i + 1) : '') + (highlightTs && r.ts === highlightTs ? ' me' : '');
+        html += '<div class="' + cls + '">' +
+                  '<span class="rr">' + (i + 1) + '</span>' +
+                  '<span class="rn">' + escHTML(r.name) + '</span>' +
+                  '<span class="rs">' + fmtScore(r.score) + '</span>' +
+                  '<span class="rd">' + escHTML(r.date) + '</span>' +
+                '</div>';
+      }
+    }
+    rankBody.innerHTML = html;
+  }
+  function openTop10(highlightTs){
+    renderTop10(highlightTs);
+    rankAgainBtn.hidden = !over;
+    topOverlay.classList.add('show');
+    ac();
+  }
+  function setupSaveBox(){
+    var ok = qualifies(score);
+    nameInput.value = load('threes.name', '');
+    nameInput.disabled = !ok;
+    nameInput.classList.remove('warn');
+    saveRecBtn.disabled = !ok;
+    saveRecBtn.textContent = '기록 저장';
+    saveRecBtn.classList.remove('done');
+    saveNote.classList.remove('warn');
+    saveBox.style.display = '';
+    if (!ok) {
+      nameInput.placeholder = 'TOP 10 밖';
+      saveNote.textContent = top10.length
+        ? '아쉬워요, TOP 10 밖이에요 · 10위 ' + fmtScore(top10[top10.length - 1].score) + '점'
+        : '0점은 기록되지 않아요';
+      saveNote.classList.add('warn');
+    } else {
+      nameInput.placeholder = '이름 (예: 리얼준)';
+      saveNote.textContent = top10.length
+        ? '🏆 ' + rankFor(score) + '위 기록을 남길 수 있어요'
+        : '🏆 첫 기록을 남겨 보세요';
+    }
+  }
+  function onSaveRecord(){
+    if (!qualifies(score)) return;
+    var name = nameInput.value.replace(/\s+/g, ' ').trim().slice(0, 12);
+    if (!name) {
+      nameInput.classList.remove('warn');
+      void nameInput.offsetWidth;
+      nameInput.classList.add('warn');
+      saveNote.textContent = '이름을 입력해 주세요';
+      saveNote.classList.add('warn');
+      try { nameInput.focus(); } catch(e){}
+      return;
+    }
+    save('threes.name', name);
+    var rec = addRecord(name, score);
+    nameInput.value = name;
+    nameInput.disabled = true;
+    saveRecBtn.disabled = true;
+    saveRecBtn.textContent = '저장됨 ✓';
+    saveRecBtn.classList.add('done');
+    saveNote.classList.remove('warn');
+    saveNote.textContent = rec ? '기록을 저장했어요' : 'TOP 10 밖이에요';
+    if (!muted) sfx.start();
+    openTop10(rec ? rec.ts : null);
+  }
+
   /* ---------------- game over ---------------- */
   function endGame(){
     over = true;
@@ -758,6 +997,7 @@ body{
     document.getElementById('overTile').innerHTML = cardHTML(hi);
     var isBest = score > bestAtStart && score > 0;
     document.getElementById('newBestTag').classList.toggle('on', isBest);
+    setupSaveBox();
     overOverlay.classList.add('show');
     sfx.over();
   }
@@ -843,6 +1083,22 @@ body{
 
   document.getElementById('btnRules').addEventListener('click', function(){ openOverlay(rulesOverlay); });
   document.getElementById('btnNew').addEventListener('click', function(){ openOverlay(newOverlay); });
+  document.getElementById('btnTop').addEventListener('click', function(){ openTop10(null); });
+  rankAgainBtn.addEventListener('click', function(){
+    closeOverlay(topOverlay); closeOverlay(overOverlay); resetGame(); sfx.start();
+  });
+  saveRecBtn.addEventListener('click', onSaveRecord);
+  document.getElementById('btnOverTop').addEventListener('click', function(){ openTop10(null); });
+  nameInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); onSaveRecord(); }
+  });
+  nameInput.addEventListener('input', function(){
+    nameInput.classList.remove('warn');
+    if (qualifies(score)) {
+      saveNote.classList.remove('warn');
+      saveNote.textContent = top10.length ? '🏆 ' + rankFor(score) + '위 기록을 남길 수 있어요' : '🏆 첫 기록을 남겨 보세요';
+    }
+  });
   document.getElementById('btnConfirmNew').addEventListener('click', function(){
     closeOverlay(newOverlay); resetGame(); sfx.start();
   });
@@ -855,7 +1111,7 @@ body{
       if (ov) closeOverlay(ov);
     });
   });
-  [rulesOverlay, newOverlay].forEach(function(ov){
+  [rulesOverlay, newOverlay, topOverlay].forEach(function(ov){
     ov.addEventListener('click', function(e){ if (e.target === ov) closeOverlay(ov); });
   });
 
@@ -906,6 +1162,7 @@ body{
     nextCard = drawCard();
     updateNext();
     overOverlay.classList.remove('show');
+    topOverlay.classList.remove('show');
   }
 
   /* ---------------- rules modal minis ---------------- */
@@ -915,6 +1172,7 @@ body{
 
   /* ---------------- boot ---------------- */
   bestEl.textContent = best.toLocaleString('en-US');
+  renderTop10(null);
   resetGame();
   window.__threes = {
     state: function(){
@@ -943,7 +1201,14 @@ body{
     scoreFor: scoreFor,
     canMerge: canMerge,
     drawCard: drawCard,
-    highest: highestTile
+    highest: highestTile,
+    records: function(){
+      return top10.map(function(r){ return { name: r.name, score: r.score, date: r.date, ts: r.ts }; });
+    },
+    addRecord: function(name, sc){ var r = addRecord(name, sc); renderTop10(null); return r; },
+    clearRecords: function(){ top10 = []; saveTop10(); renderTop10(null); },
+    qualifies: qualifies,
+    openTop10: openTop10
   };
 })();
 </script>
