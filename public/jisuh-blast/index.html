@@ -61,7 +61,7 @@ body{
 }
 .topbar > *{ pointer-events: auto; }
 .kitty-wrap{ display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
-.kitty{ width: 62px; height: 57px; display: block; filter: drop-shadow(0 3px 5px rgba(232,106,155,.22)); }
+.kitty{ width: 66px; height: auto; display: block; filter: drop-shadow(0 3px 5px rgba(232,106,155,.22)); }
 .best-pill{
   display: inline-flex; align-items: center; gap: 3px;
   max-width: 100%; padding: 2px 8px 2px 6px;
@@ -348,24 +348,7 @@ body{
 
 <header class="topbar">
   <div class="kitty-wrap">
-    <svg class="kitty" viewBox="0 0 120 112" aria-hidden="true">
-      <path d="M26 50 C20 36 20 22 25 13 C36 19 46 27 52 35 Z" fill="#FFFFFF" stroke="#F3BBD1" stroke-width="3.2" stroke-linejoin="round"/>
-      <path d="M94 50 C100 36 100 22 95 13 C84 19 74 27 68 35 Z" fill="#FFFFFF" stroke="#F3BBD1" stroke-width="3.2" stroke-linejoin="round"/>
-      <ellipse cx="60" cy="64" rx="39" ry="33" fill="#FFFFFF" stroke="#F3BBD1" stroke-width="3.2"/>
-      <ellipse cx="45" cy="64" rx="4.3" ry="5.6" fill="#54343F"/>
-      <ellipse cx="75" cy="64" rx="4.3" ry="5.6" fill="#54343F"/>
-      <circle cx="46.6" cy="61.8" r="1.5" fill="#FFFFFF"/>
-      <circle cx="76.6" cy="61.8" r="1.5" fill="#FFFFFF"/>
-      <ellipse cx="36" cy="75" rx="6.4" ry="3.8" fill="#FFD6E4"/>
-      <ellipse cx="84" cy="75" rx="6.4" ry="3.8" fill="#FFD6E4"/>
-      <ellipse cx="60" cy="73.5" rx="3.7" ry="2.9" fill="#FFAFC9"/>
-      <path d="M15 60 L33 64.5 M15 72 L33 70 M105 60 L87 64.5 M105 72 L87 70" stroke="#F3BBD1" stroke-width="3" stroke-linecap="round"/>
-      <g transform="translate(36 30) rotate(-18) scale(1.06)">
-        <path d="M0 0 C-13 -10 -23 -5 -21.5 3.5 C-20 12 -8 10.5 0 4 Z" fill="#FFA2C6" stroke="#F07EAE" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M0 4 C8.5 11.5 20.5 9.5 22 1.5 C23.5 -6.5 13 -11.5 0 0 Z" fill="#FFA2C6" stroke="#F07EAE" stroke-width="2.2" stroke-linejoin="round"/>
-        <circle cx="0.5" cy="3.6" r="4.1" fill="#FFC7DC" stroke="#F07EAE" stroke-width="1.6"/>
-      </g>
-    </svg>
+    <img class="kitty" src="/jisuh-blast/kitty-logo.png" alt="키티" width="132" height="114" decoding="sync">
     <div class="best-pill"><span class="cup">🏆</span><span id="bestVal">0</span></div>
   </div>
 
