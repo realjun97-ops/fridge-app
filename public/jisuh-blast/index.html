@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 :root{
-  --board-w: min(94vw, 430px, calc(100svh - 384px));
+  --board-w: min(94vw, 430px, calc(100svh - 432px));
   --cell: calc(var(--board-w) / 8);
   --rose: #F58FB4;
   --rose-deep: #E86A9B;
@@ -28,7 +28,7 @@
   --font-display: "Arial Rounded MT Bold", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 @supports not (height: 100svh){
-  :root{ --board-w: min(92vw, 430px, calc(100vh - 398px)); }
+  :root{ --board-w: min(92vw, 430px, calc(100vh - 446px)); }
 }
 *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body{ height: 100%; margin: 0; }
@@ -105,10 +105,26 @@ body{
   position: relative; z-index: 10;
   height: 100%;
   padding: calc(90px + env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom));
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0;
 }
-.score-wrap{ display: flex; align-items: center; justify-content: center; min-height: clamp(38px, 5.6vh, 50px); }
+.score-wrap{ position: relative; display: flex; align-items: center; justify-content: center; min-height: clamp(38px, 5.6vh, 50px); width: var(--board-w); }
+.combo-badge{
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%) scale(.9);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 4px 7px 5px; border-radius: 12px;
+  background: linear-gradient(180deg, #FFF8DC 0%, #FFE6A4 100%);
+  box-shadow: 0 2px 0 #F0CB70, 0 4px 9px rgba(226,160,60,.28), inset 0 0 0 1.5px #fff;
+  color: #B9661B; font-weight: 900; font-size: 10.5px; line-height: 1;
+  opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease;
+  white-space: nowrap;
+}
+.combo-badge.on{ opacity: 1; transform: translateY(-50%) scale(1); }
+.combo-badge .cb-row{ display: flex; align-items: center; gap: 2px; }
+.combo-badge .cb-fire{ font-size: 10px; }
+.combo-badge .dots{ display: flex; gap: 2.5px; margin-top: 2px; }
+.combo-badge .dots i{ width: 4px; height: 4px; border-radius: 50%; background: #F0CE92; display: block; }
+.combo-badge .dots i.on{ background: #FF6B8A; box-shadow: 0 0 3px rgba(255,107,138,.8); }
 .score{
   font-family: var(--font-display);
   font-weight: 900; font-size: clamp(32px, 10.4vw, 42px); line-height: 1;
@@ -130,7 +146,7 @@ body{
     0 2px 0 rgba(255,255,255,.55) inset,
     0 -3px 0 rgba(198,86,128,.16) inset;
   flex: 0 0 auto;
-  margin-top: clamp(8px, 3.2vh, 30px);
+  margin-top: clamp(8px, 2.2vh, 22px);
 }
 .board{
   position: relative; width: 100%; aspect-ratio: 1 / 1;
@@ -200,7 +216,7 @@ body{
   background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,231,241,.94));
   box-shadow: 0 5px 14px rgba(224,118,158,.2), inset 0 1px 0 #fff, 0 0 0 2px rgba(255,255,255,.75);
   touch-action: none;
-  margin-top: clamp(20px, 11.5vh, 110px);
+  margin-top: clamp(8px, 2.4vh, 20px);
 }
 .slot{ position: relative; border-radius: calc(var(--board-w) * .03); }
 .slot.grab{ cursor: grab; }
@@ -213,7 +229,8 @@ body{
   55%{ transform: scale(1.1); opacity: 1; }
   100%{ transform: scale(1); opacity: 1; }
 }
-.slot-empty-dot{ position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(232,106,155,.14); }
+.slot-empty-dot{ position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: rgba(232,106,155,.13); box-shadow: inset 0 1px 2px rgba(200,100,140,.12); }
+.slot.empty{ box-shadow: inset 0 0 0 1.5px rgba(232,106,155,.10); border-radius: calc(var(--board-w) * .03); }
 
 .footer-deco{ position: fixed; left: 0; right: 0; bottom: 0; height: 185px; z-index: 5; pointer-events: none; opacity: .9; }
 .footer-deco svg{ width: 100%; height: 100%; display: block; }
@@ -335,6 +352,135 @@ body{
 .sync-note{ margin-top: 11px; font-size: 10.5px; font-weight: 700; color: var(--ink-faint); letter-spacing: .02em; min-height: 13px; }
 .sync-note.off{ color: #D99AAE; }
 .rank-again{ margin-top: 12px; width: 100%; }
+/* ---------------- item bar ---------------- */
+.tools{
+  width: var(--board-w); flex: 0 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-top: clamp(8px, 2.8vh, 22px);
+  position: relative; z-index: 12;
+}
+.tool{
+  position: relative; border: 0; cursor: pointer; font: inherit; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  height: clamp(40px, 5.4vh, 48px);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF0F7 100%);
+  box-shadow: 0 3px 0 #FFC6DC, 0 5px 12px rgba(232,106,155,.16), inset 0 0 0 1.5px #FFD3E4;
+  color: var(--rose-deep);
+  transition: transform .12s ease, box-shadow .16s ease, filter .16s ease;
+  -webkit-user-select: none; user-select: none;
+}
+.tool:active{ transform: translateY(1px) scale(.98); }
+.tool .ico{ font-size: 15px; line-height: 1.05; filter: drop-shadow(0 1px 1px rgba(200,90,135,.22)); }
+.tool .lbl{ font-size: 9.5px; font-weight: 900; letter-spacing: -.02em; color: var(--rose-deep); line-height: 1; }
+.tool .cnt{
+  position: absolute; top: -6px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #FF93BE 0%, #FF6B9F 100%);
+  color: #fff; font-size: 10px; font-weight: 900; line-height: 1;
+  box-shadow: 0 2px 4px rgba(200,80,130,.35), inset 0 0 0 1.5px #fff;
+  font-variant-numeric: tabular-nums;
+}
+.tool.locked{
+  background: linear-gradient(180deg, #FBF6F9 0%, #F1E7EE 100%);
+  box-shadow: 0 3px 0 #E4D5DD, 0 3px 8px rgba(180,140,160,.14), inset 0 0 0 1.5px #ECDFE6;
+  color: #B9A0AC;
+}
+.tool.locked .ico{ filter: grayscale(.5); opacity: .8; font-size: 13px; }
+.tool.locked .lbl{ color: #B9A0AC; }
+.tool.empty:not(.locked){ opacity: .46; }
+.tool.armed{
+  background: linear-gradient(180deg, #FFE3EE 0%, #FFC0D7 100%);
+  box-shadow: 0 3px 0 #F197B8, 0 0 0 2.5px #FF5F9C, 0 4px 14px rgba(255,95,156,.45);
+  animation: armedPulse 1s ease-in-out infinite;
+}
+@keyframes armedPulse{ 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.045); } }
+
+#board.bomb-mode{ cursor: crosshair; }
+#board.bomb-mode::after{
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 4px rgba(255,58,132,.9), inset 0 0 34px rgba(255,58,132,.42);
+  animation: bombRing 1s ease-in-out infinite;
+}
+@keyframes bombRing{ 0%,100%{ opacity: .5; } 50%{ opacity: 1; } }
+
+/* hint highlight */
+.cell.hint-cell .slot-bg{ background: #FFF0C4; }
+.cell.hint-cell::after{
+  content: ''; position: absolute; inset: 3%; border-radius: 26%;
+  border: 2px dashed rgba(255,138,180,.95);
+  background: radial-gradient(circle at 50% 45%, rgba(255,222,140,.85) 0%, rgba(255,160,198,.35) 70%, rgba(255,160,198,.1) 100%);
+  box-shadow: 0 0 12px rgba(255,206,110,.95), inset 0 0 9px rgba(255,255,255,.85);
+  animation: hintPulse .8s ease-in-out infinite; pointer-events: none;
+}
+@keyframes hintPulse{ 0%,100%{ opacity: .62; transform: scale(.9); } 50%{ opacity: 1; transform: scale(1.03); } }
+.slot.hint-target{
+  background: radial-gradient(circle at 50% 50%, rgba(255,214,120,.6) 0%, rgba(255,180,208,.14) 100%);
+  box-shadow: 0 0 0 2.5px #FFB0CD, 0 0 15px rgba(255,182,110,.9);
+}
+.slot.hint-target .mini{
+  animation: hintBob .8s ease-in-out infinite;
+  filter: drop-shadow(0 0 5px #FFD76A) drop-shadow(0 0 11px #FF9EC2);
+}
+@keyframes hintBob{ 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.1); } }
+
+/* revive button */
+.btn-revive{
+  width: 100%; margin-top: 13px; height: 52px; padding: 0 12px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  background: linear-gradient(180deg, #FFB6D0 0%, #FF6FA5 100%);
+  color: #fff; font-size: 15.5px; font-weight: 900; border-radius: 16px; border: 0; cursor: pointer;
+  text-shadow: 0 1px 0 rgba(180,60,105,.28);
+  animation: reviveGlow 1.6s ease-in-out infinite;
+}
+.btn-revive .rv-sub{ font-size: 11.5px; font-weight: 800; opacity: .96; }
+.btn-revive:active{ transform: translateY(1px) scale(.99); }
+@keyframes reviveGlow{
+  0%,100%{ box-shadow: 0 5px 0 #E1558C, 0 8px 16px rgba(232,106,155,.3); }
+  50%{ box-shadow: 0 5px 0 #E1558C, 0 10px 26px rgba(255,95,156,.62); }
+}
+
+/* unlock banner */
+.unlock-banner{
+  position: fixed; left: 50%; top: 33%; z-index: 66; transform: translate(-50%, -50%) scale(.86);
+  pointer-events: none; opacity: 0; text-align: center;
+  padding: 13px 20px 14px; border-radius: 20px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF3CE 100%);
+  box-shadow: 0 14px 32px rgba(226,160,60,.38), inset 0 0 0 2.5px #FFD770;
+  color: #B9661B; font-weight: 900; font-size: 14px; line-height: 1.45;
+}
+.unlock-banner b{ color: #E1558C; }
+.unlock-banner.show{ animation: unlockPop 2.2s ease both; }
+@keyframes unlockPop{
+  0%{ opacity: 0; transform: translate(-50%, -50%) scale(.68); }
+  12%{ opacity: 1; transform: translate(-50%, -50%) scale(1.07); }
+  22%{ transform: translate(-50%, -50%) scale(1); }
+  82%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100%{ opacity: 0; transform: translate(-50%, -60%) scale(.96); }
+}
+
+/* all clear effect */
+.allclear{
+  position: fixed; left: 50%; top: 39%; z-index: 66; transform: translate(-50%, -50%);
+  pointer-events: none; opacity: 0; text-align: center;
+}
+.allclear span{
+  display: block; font-family: var(--font-display); font-weight: 900; font-size: 30px; letter-spacing: .02em;
+  color: #FF4E92; -webkit-text-stroke: 4px #fff; paint-order: stroke fill;
+  text-shadow: 0 4px 0 #FFC3DA, 0 0 20px rgba(255,180,210,.9);
+}
+.allclear b{
+  display: block; margin-top: 1px; font-size: 21px; color: #E58B1B;
+  -webkit-text-stroke: 3.4px #fff; paint-order: stroke fill; text-shadow: 0 3px 0 #FFE3B8;
+}
+.allclear.show{ animation: allClearPop 1.6s ease both; }
+@keyframes allClearPop{
+  0%{ opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  16%{ opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  28%{ transform: translate(-50%, -50%) scale(1); }
+  80%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100%{ opacity: 0; transform: translate(-50%, -60%) scale(.98); }
+}
 [hidden]{ display: none !important; }
 </style>
 </head>
@@ -366,8 +512,30 @@ body{
 </header>
 
 <main class="stage">
-  <div class="score-wrap"><div class="score" id="scoreVal">0</div></div>
+  <div class="score-wrap">
+    <div class="score" id="scoreVal">0</div>
+    <div class="combo-badge" id="comboBadge" aria-live="polite">
+      <span class="cb-row"><span class="cb-fire">🔥</span><span id="comboNum">×1</span></span>
+      <span class="dots" id="comboDots"><i></i><i></i><i></i></span>
+    </div>
+  </div>
   <div class="board-frame"><div class="board" id="board"></div></div>
+
+  <div class="tools" id="tools">
+    <button class="tool" id="toolUndo" data-tool="undo" type="button" aria-label="되돌리기">
+      <span class="ico">↩️</span><span class="lbl">되돌리기</span><span class="cnt">2</span>
+    </button>
+    <button class="tool" id="toolHint" data-tool="hint" type="button" aria-label="힌트">
+      <span class="ico">💡</span><span class="lbl">힌트</span><span class="cnt">2</span>
+    </button>
+    <button class="tool" id="toolRefresh" data-tool="refresh" type="button" aria-label="새로고침">
+      <span class="ico">🔄</span><span class="lbl">새로고침</span><span class="cnt">2</span>
+    </button>
+    <button class="tool" id="toolBomb" data-tool="bomb" type="button" aria-label="폭탄">
+      <span class="ico">💣</span><span class="lbl">폭탄</span><span class="cnt">2</span>
+    </button>
+  </div>
+
   <div class="tray" id="tray">
     <div class="slot" data-i="0"></div>
     <div class="slot" data-i="1"></div>
@@ -387,6 +555,8 @@ body{
 </div>
 <div class="ghost" id="ghost" aria-hidden="true"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="unlock-banner" id="unlockBanner" aria-hidden="true">🎉 1,000점 달성!<br><b>아이템 4종 해금</b> 💖</div>
+<div class="allclear" id="allClearFx" aria-hidden="true"><span>ALL CLEAR!</span><b>+300</b></div>
 
 <!-- game over -->
 <div class="overlay" id="overOverlay">
@@ -396,6 +566,7 @@ body{
     <div class="over-label">SCORE</div>
     <div class="over-score" id="overScore">0</div>
     <div class="over-best">🏆 BEST <span id="overBest">0</span><span class="new" id="newBadge" hidden>NEW!</span></div>
+    <button class="btn-revive" id="reviveBtn" type="button" hidden>💖 부활 <span class="rv-sub">3줄 비우고 이어하기</span></button>
     <div class="save-box" id="saveBox">
       <div class="save-note" id="saveNote">🏆 첫 기록을 남겨 보세요</div>
       <div class="save-row">
@@ -522,6 +693,18 @@ body{
   var rankClose = document.getElementById('rankClose');
   var rankAgainBtn = document.getElementById('rankAgainBtn');
   var syncNoteEl = document.getElementById('syncNote');
+  var comboBadge = document.getElementById('comboBadge');
+  var comboNumEl = document.getElementById('comboNum');
+  var comboDots = document.getElementById('comboDots');
+  var toolBtns = {
+    undo: document.getElementById('toolUndo'),
+    hint: document.getElementById('toolHint'),
+    refresh: document.getElementById('toolRefresh'),
+    bomb: document.getElementById('toolBomb')
+  };
+  var reviveBtn = document.getElementById('reviveBtn');
+  var unlockBanner = document.getElementById('unlockBanner');
+  var allClearFx = document.getElementById('allClearFx');
 
   /* ================= board cells ================= */
   var cells = [];
@@ -552,6 +735,16 @@ body{
   var best = 0;
   var newBestThisGame = false;
   var lastDrop = -1;
+
+  /* original-rules & item state */
+  var missStreak = 0;          /* consecutive placements without a clear (resets combo at 3) */
+  var unlockedFlag = false;    /* items unlocked once this game's score reached 1,000 */
+  var reviveUsed = false;      /* revive is once per game */
+  var toolLeft = { undo: 2, hint: 2, refresh: 2, bomb: 2 };
+  var bombMode = false;
+  var hintState = null;
+  var undoSnap = null;
+  var undoArmed = false;
 
   function idx(r, c) { return r * SIZE + c; }
   function cellAt(i) { return cells[i]; }
@@ -586,6 +779,8 @@ body{
     scoreEl.classList.remove('bump');
     void scoreEl.offsetWidth;
     scoreEl.classList.add('bump');
+    maybeUnlock();
+    updateTools();
   }
   function setBest(v) {
     if (v > best) {
@@ -631,15 +826,21 @@ body{
 
   /* ================= tray render ================= */
   function renderTray(popIndex) {
+    var pops = popIndex === 'all' ? [0, 1, 2] : (Array.isArray(popIndex) ? popIndex : [popIndex]);
     for (var s = 0; s < 3; s++) {
       var slot = slots[s];
       slot.innerHTML = '';
       slot.classList.toggle('empty', !pieces[s]);
       slot.classList.remove('dragging');
       var piece = pieces[s];
-      if (!piece) { continue; }
+      if (!piece) {
+        var dot = document.createElement('div');
+        dot.className = 'slot-empty-dot';
+        slot.appendChild(dot);
+        continue;
+      }
       var mini = buildMini(piece, slot);
-      if (s === popIndex) mini.classList.add('pop-in');
+      if (pops.indexOf(s) >= 0) mini.classList.add('pop-in');
       slot.appendChild(mini);
       slot.classList.add('grab');
       slot.dataset.i = String(s);
@@ -797,25 +998,36 @@ body{
     if (busy || over) return false;
     var piece = pieces[i];
     if (!piece || !canPlace(piece, row, col)) return false;
+    clearHint();
+    undoSnap = captureSnap();
     var k;
     for (k = 0; k < piece.cells.length; k++) {
       var cellIdx = idx(row + piece.cells[k][1], col + piece.cells[k][0]);
       grid[cellIdx] = piece.color;
       drawCell(cellIdx, true);
     }
-    pieces[i] = randPiece();
-    renderTray(i);
+    pieces[i] = null;
+    renderTray();
     setScore(score + piece.size);
     if (score > best) { setBest(score); newBestThisGame = true; }
     busy = true;
+    undoArmed = true;
+    updateTools();
 
     var fl = fullLines();
     var done = function () {
       busy = false;
+      if (!pieces[0] && !pieces[1] && !pieces[2]) {
+        pieces = [randPiece(), randPiece(), randPiece()];
+        renderTray('all');
+      }
+      updateTools();
       if (!anyFit()) { showGameOver(); return; }
     };
     if (fl.count > 0) {
       combo += 1;
+      missStreak = 0;
+      updateCombo();
       var gained = 100 * fl.count * fl.count * Math.min(4, 1 + 0.5 * (combo - 1));
       gained = Math.round(gained);
       var flash = [];
@@ -832,15 +1044,387 @@ body{
           blk.style.display = 'none';
         });
         setScore(score + gained);
+        if (isEmptyBoard()) {
+          setScore(score + 300);
+          showAllClear();
+          showToast('ALL CLEAR! +300');
+        }
         if (score > best) { setBest(score); newBestThisGame = true; }
         done();
       }, CLEAR_MS);
     } else {
-      combo = 0;
+      missStreak += 1;
+      if (missStreak >= 3) {
+        combo = 0;
+        missStreak = 0;
+        showToast('콤보 초기화');
+      }
+      updateCombo();
       setTimeout(done, DROP_MS);
     }
     return true;
   }
+
+  /* ================= snapshot (for undo) ================= */
+  function captureSnap() {
+    return {
+      grid: grid.slice(),
+      score: score,
+      combo: combo,
+      missStreak: missStreak,
+      best: best,
+      pieces: pieces.map(function (p) { return p ? { id: p.id, color: p.color } : null; })
+    };
+  }
+  function restoreSnap(s) {
+    grid = s.grid.slice();
+    score = s.score;
+    combo = s.combo;
+    missStreak = s.missStreak;
+    if (s.best != null && s.best !== best) {
+      best = s.best;
+      save(BEST_KEY, String(best));
+      bestEl.textContent = NUM(best);
+    }
+    pieces = s.pieces.map(function (d) { return d ? makePiece(d.id, d.color) : null; });
+    scoreEl.textContent = NUM(score);
+    lastDrop = -1;
+    drawAll();
+    renderTray();
+    updateCombo();
+    updateTools();
+  }
+
+  /* ================= items: unlock / undo / hint / refresh / bomb / revive ================= */
+  var TOOL_ICON = { undo: '↩️', hint: '💡', refresh: '🔄', bomb: '💣' };
+
+  function lockedToast() { showToast('1,000점 달성 시 해금돼요!'); }
+
+  function updateTools() {
+    for (var k in toolBtns) {
+      if (!Object.prototype.hasOwnProperty.call(toolBtns, k)) continue;
+      var btn = toolBtns[k];
+      if (!btn) continue;
+      var locked = !unlockedFlag;
+      btn.classList.toggle('locked', locked);
+      var icoEl = btn.querySelector('.ico');
+      var cntEl = btn.querySelector('.cnt');
+      if (icoEl) icoEl.textContent = locked ? '🔒' : TOOL_ICON[k];
+      if (cntEl) { cntEl.textContent = String(toolLeft[k]); cntEl.hidden = locked; }
+      var out = !locked && (toolLeft[k] <= 0 || (k === 'undo' && !undoArmed));
+      btn.classList.toggle('empty', out);
+    }
+    if (toolBtns.bomb) toolBtns.bomb.classList.toggle('armed', bombMode);
+    boardEl.classList.toggle('bomb-mode', bombMode);
+  }
+
+  function maybeUnlock() {
+    if (unlockedFlag || score < 1000) return;
+    unlockedFlag = true;
+    updateTools();
+    if (unlockBanner) {
+      unlockBanner.classList.remove('show');
+      void unlockBanner.offsetWidth;
+      unlockBanner.classList.add('show');
+    }
+    showToast('🎉 1,000점 달성! 아이템 해금!');
+  }
+
+  function updateCombo() {
+    if (!comboBadge) return;
+    comboBadge.classList.toggle('on', combo > 0 && !over);
+    if (comboNumEl) comboNumEl.textContent = '×' + combo;
+    if (comboDots) {
+      for (var i = 0; i < comboDots.children.length; i++) {
+        comboDots.children[i].className = i < missStreak ? 'on' : '';
+      }
+    }
+  }
+
+  function showAllClear() {
+    if (!allClearFx) return;
+    allClearFx.classList.remove('show');
+    void allClearFx.offsetWidth;
+    allClearFx.classList.add('show');
+  }
+
+  function isEmptyBoard() {
+    for (var i = 0; i < grid.length; i++) if (grid[i]) return false;
+    return true;
+  }
+
+  function fitsAnywhere(piece, bg) {
+    if (!piece) return false;
+    for (var r = 0; r <= SIZE - piece.h; r++)
+      for (var c = 0; c <= SIZE - piece.w; c++) {
+        var ok = true;
+        for (var i = 0; i < piece.cells.length; i++) {
+          if (bg[idx(r + piece.cells[i][1], c + piece.cells[i][0])]) { ok = false; break; }
+        }
+        if (ok) return true;
+      }
+    return false;
+  }
+  function placementsCount(piece, bg) {
+    if (!piece) return 0;
+    var out = 0;
+    for (var r = 0; r <= SIZE - piece.h; r++)
+      for (var c = 0; c <= SIZE - piece.w; c++) {
+        var ok = true;
+        for (var i = 0; i < piece.cells.length; i++) {
+          if (bg[idx(r + piece.cells[i][1], c + piece.cells[i][0])]) { ok = false; break; }
+        }
+        if (ok) out++;
+      }
+    return out;
+  }
+  function fullLinesOn(b) {
+    var rows = [], cols = [], r, c;
+    for (r = 0; r < SIZE; r++) {
+      var ok = true;
+      for (c = 0; c < SIZE; c++) if (!b[idx(r, c)]) { ok = false; break; }
+      if (ok) rows.push(r);
+    }
+    for (c = 0; c < SIZE; c++) {
+      var ok2 = true;
+      for (r = 0; r < SIZE; r++) if (!b[idx(r, c)]) { ok2 = false; break; }
+      if (ok2) cols.push(c);
+    }
+    return { rows: rows, cols: cols };
+  }
+
+  function findBestMove() {
+    var bestMove = null;
+    for (var p = 0; p < 3; p++) {
+      var piece = pieces[p];
+      if (!piece) continue;
+      for (var r = 0; r <= SIZE - piece.h; r++) {
+        for (var c = 0; c <= SIZE - piece.w; c++) {
+          if (!canPlace(piece, r, c)) continue;
+          var fills = [], nb = grid.slice(), adj = 0, i;
+          for (i = 0; i < piece.cells.length; i++) {
+            var rr = r + piece.cells[i][1], cc = c + piece.cells[i][0], ci = idx(rr, cc);
+            fills.push(ci);
+            nb[ci] = '__h__';
+            var nbrs = [[rr - 1, cc], [rr + 1, cc], [rr, cc - 1], [rr, cc + 1]];
+            for (var n = 0; n < 4; n++) {
+              var nr = nbrs[n][0], nc = nbrs[n][1];
+              if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) { adj += 0.4; continue; }
+              if (grid[idx(nr, nc)]) adj += 1;
+            }
+          }
+          var fl = fullLinesOn(nb);
+          var cleared = fl.rows.length + fl.cols.length;
+          var after = nb.slice(), q, e;
+          for (i = 0; i < fl.rows.length; i++) for (e = 0; e < SIZE; e++) after[idx(fl.rows[i], e)] = null;
+          for (i = 0; i < fl.cols.length; i++) for (e = 0; e < SIZE; e++) after[idx(e, fl.cols[i])] = null;
+          var fits = 0;
+          for (q = 0; q < 3; q++) { if (q === p || !pieces[q]) continue; fits += placementsCount(pieces[q], after); }
+          var empties = 0;
+          for (e = 0; e < after.length; e++) if (!after[e]) empties++;
+          var sc = cleared * 100000 + fits * 300 + adj * 8 + empties;
+          if (!bestMove || sc > bestMove.sc) {
+            bestMove = { piece: p, row: r, col: c, cells: fills, cleared: cleared, sc: sc };
+          }
+        }
+      }
+    }
+    return bestMove;
+  }
+
+  function clearHint() {
+    hintState = null;
+    for (var s = 0; s < slots.length; s++) slots[s].classList.remove('hint-target');
+    for (var i = 0; i < cells.length; i++) cells[i].el.classList.remove('hint-cell');
+  }
+  function paintHint(mv) {
+    if (!mv) return;
+    if (slots[mv.piece]) slots[mv.piece].classList.add('hint-target');
+    for (var i = 0; i < mv.cells.length; i++) cells[mv.cells[i]].el.classList.add('hint-cell');
+  }
+
+  function consume(k) {
+    if (toolLeft[k] > 0) toolLeft[k] -= 1;
+    updateTools();
+  }
+
+  function doUndo() {
+    if (!unlockedFlag) { lockedToast(); return false; }
+    if (toolLeft.undo <= 0) { showToast('되돌리기를 다 썼어요'); return false; }
+    if (busy || over) return false;
+    if (!undoArmed || !undoSnap) { showToast('되돌릴 수 있는 수가 없어요'); return false; }
+    restoreSnap(undoSnap);
+    undoSnap = null;
+    undoArmed = false;
+    consume('undo');
+    showToast('한 수 되돌렸어요');
+    return true;
+  }
+
+  function doHint() {
+    if (!unlockedFlag) { lockedToast(); return false; }
+    if (toolLeft.hint <= 0) { showToast('힌트를 다 썼어요'); return false; }
+    if (busy || over) return false;
+    var mv = findBestMove();
+    if (!mv) { showToast('놓을 수 있는 곳이 없어요'); return false; }
+    clearHint();
+    hintState = mv;
+    paintHint(mv);
+    consume('hint');
+    showToast('가장 좋은 자리를 표시했어요');
+    return true;
+  }
+
+  function drawPlaceableTray(n) {
+    n = Math.max(1, n || 3);
+    var list = null, t, k;
+    for (t = 0; t < 400; t++) {
+      var cand = [];
+      for (k = 0; k < n; k++) cand.push(randPiece());
+      if (cand.some(function (p) { return fitsAnywhere(p, grid); })) { list = cand; break; }
+    }
+    if (!list) {
+      list = [];
+      for (k = 0; k < n; k++) list.push(randPiece());
+      var empties = [], i;
+      for (i = 0; i < grid.length; i++) if (!grid[i]) empties.push(i);
+      if (empties.length) {
+        list[Math.floor(Math.random() * n)] = makePiece('dot', COLORS[Math.floor(Math.random() * COLORS.length)]);
+      }
+    }
+    return list;
+  }
+
+  function remainingSlots() {
+    var out = [];
+    for (var s = 0; s < 3; s++) if (pieces[s]) out.push(s);
+    return out;
+  }
+
+  function forcePlaceableTray() {
+    var idxs = remainingSlots();
+    if (!idxs.length) {
+      pieces = [randPiece(), randPiece(), randPiece()];
+      renderTray('all');
+      return true;
+    }
+    var fresh = drawPlaceableTray(idxs.length), s;
+    for (s = 0; s < idxs.length; s++) pieces[idxs[s]] = fresh[s];
+    renderTray(idxs);
+    return true;
+  }
+
+  function doRefresh() {
+    if (!unlockedFlag) { lockedToast(); return false; }
+    if (toolLeft.refresh <= 0) { showToast('새로고침을 다 썼어요'); return false; }
+    if (busy || over) return false;
+    var idxs = remainingSlots();
+    if (!idxs.length) { showToast('바꿀 블록이 없어요'); return false; }
+    var fresh = drawPlaceableTray(idxs.length), s;
+    for (s = 0; s < idxs.length; s++) pieces[idxs[s]] = fresh[s];
+    clearHint();
+    renderTray(idxs);
+    consume('refresh');
+    showToast(idxs.length < 3 ? ('남은 ' + idxs.length + '개를 새로 뽑았어요') : '블록 3개를 새로 뽑았어요');
+    return true;
+  }
+
+  function toggleBomb() {
+    if (!unlockedFlag) { lockedToast(); return false; }
+    if (toolLeft.bomb <= 0) { showToast('폭탄을 다 썼어요'); return false; }
+    if (busy || over) return false;
+    bombMode = !bombMode;
+    if (bombMode) clearHint();
+    updateTools();
+    showToast(bombMode ? '💣 터뜨릴 칸을 탭하세요' : '폭탄 취소');
+    return bombMode;
+  }
+
+  function bombAt(row, col) {
+    if (!bombMode) return false;
+    if (row == null || col == null || row < 0 || row >= SIZE || col < 0 || col >= SIZE) return false;
+    var targets = [], dr, dc;
+    for (dr = -1; dr <= 1; dr++) for (dc = -1; dc <= 1; dc++) {
+      var r = row + dr, c = col + dc;
+      if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) continue;
+      var i = idx(r, c);
+      if (grid[i]) targets.push(i);
+    }
+    if (!targets.length) { showToast('여기엔 터뜨릴 블록이 없어요!'); return false; }
+    bombMode = false;
+    clearHint();
+    undoArmed = false;
+    undoSnap = null;
+    consume('bomb');
+    busy = true;
+    targets.forEach(function (i) { cells[i].blk.classList.add('pop'); });
+    setTimeout(function () {
+      targets.forEach(function (i) {
+        grid[i] = null;
+        var blk = cells[i].blk;
+        blk.classList.remove('pop');
+        blk.className = 'blk';
+        blk.style.display = 'none';
+      });
+      busy = false;
+      updateTools();
+      if (!anyFit()) { showGameOver(); return; }
+      showToast('💣 ' + targets.length + '칸 정리 완료');
+    }, 240);
+    return true;
+  }
+
+  function doRevive() {
+    if (!over || reviveUsed || score < 1000) return false;
+    reviveUsed = true;
+    var rows = [], r, c;
+    for (r = 0; r < SIZE; r++) {
+      var n = 0;
+      for (c = 0; c < SIZE; c++) if (grid[idx(r, c)]) n++;
+      if (n > 0) rows.push({ r: r, n: n });
+    }
+    rows.sort(function (a, b) { return b.n - a.n || a.r - b.r; });
+    var pick = rows.slice(0, 3);
+    pick.forEach(function (o) {
+      for (var cc = 0; cc < SIZE; cc++) {
+        var i = idx(o.r, cc);
+        grid[i] = null;
+        var blk = cells[i].blk;
+        blk.classList.remove('pop');
+        blk.className = 'blk';
+        blk.style.display = 'none';
+      }
+    });
+    combo = 0;
+    missStreak = 0;
+    over = false;
+    busy = false;
+    overOverlay.classList.remove('show');
+    scoreEl.textContent = NUM(score);
+    drawAll();
+    if (!anyFit()) forcePlaceableTray();
+    updateCombo();
+    updateTools();
+    showToast('💖 부활! ' + pick.length + '줄을 비웠어요');
+    return true;
+  }
+
+  reviveBtn.addEventListener('click', function () { doRevive(); });
+  toolBtns.undo.addEventListener('click', function () { doUndo(); });
+  toolBtns.hint.addEventListener('click', function () { doHint(); });
+  toolBtns.refresh.addEventListener('click', function () { doRefresh(); });
+  toolBtns.bomb.addEventListener('click', function () { toggleBomb(); });
+
+  boardEl.addEventListener('pointerdown', function (e) {
+    if (!bombMode) return;
+    e.preventDefault();
+    var b = boardEl.getBoundingClientRect();
+    var pitch = b.width / SIZE;
+    var col = Math.floor((e.clientX - b.left) / pitch);
+    var row = Math.floor((e.clientY - b.top) / pitch);
+    if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+    bombAt(row, col);
+  }, { passive: false });
 
   var toastTimer = null;
   function showToast(text) {
@@ -854,14 +1438,21 @@ body{
   function newGame() {
     grid = new Array(SIZE * SIZE).fill(null);
     score = 0; combo = 0; busy = false; over = false; savedThisGame = false; saving = false;
+    missStreak = 0; unlockedFlag = false; reviveUsed = false;
+    toolLeft = { undo: 2, hint: 2, refresh: 2, bomb: 2 };
+    bombMode = false; hintState = null; undoSnap = null; undoArmed = false;
     pieces = [randPiece(), randPiece(), randPiece()];
     newBestThisGame = false;
     overOverlay.classList.remove('show');
     topOverlay.classList.remove('show');
     scoreEl.textContent = '0';
     newBadge.hidden = true;
+    reviveBtn.hidden = true;
+    clearHint();
     drawAll();
     renderTray();
+    updateCombo();
+    updateTools();
   }
 
   function restart() {
@@ -874,6 +1465,9 @@ body{
     overScoreEl.textContent = NUM(score);
     overBestEl.textContent = NUM(best);
     newBadge.hidden = !(newBestThisGame && score > 0);
+    reviveBtn.hidden = !(score >= 1000 && !reviveUsed);
+    updateCombo();
+    updateTools();
     setupSaveBox();
     overOverlay.classList.add('show');
     rankAgainBtn.hidden = false;
@@ -1215,6 +1809,9 @@ body{
         }
       }
       drawAll();
+      undoArmed = false; undoSnap = null;
+      clearHint();
+      updateTools();
     },
     setPieces: function (list) {
       pieces = [0, 1, 2].map(function (i) {
@@ -1234,6 +1831,31 @@ body{
     fast: function (on) { CLEAR_MS = on ? 0 : 280; DROP_MS = on ? 0 : 120; return [CLEAR_MS, DROP_MS]; },
     newGame: function () { restart(); },
     forceGameOver: function () { over = false; pieces = [makePiece('sq3', 'pink'), makePiece('sq3', 'pink'), makePiece('sq3', 'pink')]; showGameOver(); },
+    combo: function () { return combo; },
+    missStreak: function () { return missStreak; },
+    unlocked: function () { return unlockedFlag; },
+    tools: function () { return { undo: toolLeft.undo, hint: toolLeft.hint, refresh: toolLeft.refresh, bomb: toolLeft.bomb }; },
+    undoArmed: function () { return undoArmed; },
+    busy: function () { return busy; },
+    bombMode: function () { return bombMode; },
+    hintState: function () { return hintState ? { piece: hintState.piece, row: hintState.row, col: hintState.col, cleared: hintState.cleared, cells: hintState.cells.slice() } : null; },
+    hintSlot: function () { var o = []; for (var i = 0; i < 3; i++) if (slots[i].classList.contains('hint-target')) o.push(i); return o; },
+    hintCells: function () { var o = []; for (var i = 0; i < cells.length; i++) if (cells[i].el.classList.contains('hint-cell')) o.push(i); return o; },
+    setScore: function (v) { setScore(v); return score; },
+    undo: function () { return doUndo(); },
+    hint: function () { return doHint(); },
+    refresh: function () { return doRefresh(); },
+    toggleBomb: function () { return toggleBomb(); },
+    bombAt: function (r, c) { return bombAt(r, c); },
+    revive: function () { return doRevive(); },
+    reviveUsed: function () { return reviveUsed; },
+    reviveVisible: function () { return !!(reviveBtn && !reviveBtn.hidden); },
+    gameOver: function (sc) {
+      if (typeof sc === 'number') setScore(sc);
+      over = false;
+      showGameOver();
+      return over;
+    },
     records: function () { return top10.slice(); },
     submitRecord: function (name, sc) {
       var rec = { name: String(name).slice(0, 12), score: sc, date: todayStr(), ts: Date.now() };
