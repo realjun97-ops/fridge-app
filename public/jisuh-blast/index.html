@@ -207,6 +207,12 @@ body{
 .slot.dragging .mini{ opacity: .18; }
 .slot .mini{ position: absolute; }
 .slot .mini .blk{ pointer-events: none; }
+.slot .mini.pop-in{ animation: trayPop .3s cubic-bezier(.24,1.35,.42,1) both; }
+@keyframes trayPop{
+  0%{ transform: scale(.35); opacity: 0; }
+  55%{ transform: scale(1.1); opacity: 1; }
+  100%{ transform: scale(1); opacity: 1; }
+}
 .slot-empty-dot{ position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(232,106,155,.14); }
 
 .footer-deco{ position: fixed; left: 0; right: 0; bottom: 0; height: 185px; z-index: 5; pointer-events: none; opacity: .9; }
@@ -624,7 +630,7 @@ body{
   }
 
   /* ================= tray render ================= */
-  function renderTray() {
+  function renderTray(popIndex) {
     for (var s = 0; s < 3; s++) {
       var slot = slots[s];
       slot.innerHTML = '';
@@ -633,6 +639,7 @@ body{
       var piece = pieces[s];
       if (!piece) { continue; }
       var mini = buildMini(piece, slot);
+      if (s === popIndex) mini.classList.add('pop-in');
       slot.appendChild(mini);
       slot.classList.add('grab');
       slot.dataset.i = String(s);
@@ -796,8 +803,8 @@ body{
       grid[cellIdx] = piece.color;
       drawCell(cellIdx, true);
     }
-    pieces[i] = null;
-    renderTray();
+    pieces[i] = randPiece();
+    renderTray(i);
     setScore(score + piece.size);
     if (score > best) { setBest(score); newBestThisGame = true; }
     busy = true;
@@ -826,18 +833,10 @@ body{
         });
         setScore(score + gained);
         if (score > best) { setBest(score); newBestThisGame = true; }
-        if (!pieces.some(function (p) { return !!p; })) {
-          pieces = [randPiece(), randPiece(), randPiece()];
-          renderTray();
-        }
         done();
       }, CLEAR_MS);
     } else {
       combo = 0;
-      if (!pieces.some(function (p) { return !!p; })) {
-        pieces = [randPiece(), randPiece(), randPiece()];
-        renderTray();
-      }
       setTimeout(done, DROP_MS);
     }
     return true;
