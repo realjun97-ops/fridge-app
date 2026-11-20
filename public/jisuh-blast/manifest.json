@@ -1,0 +1,26 @@
+{
+  "name": "JISUH Blast!",
+  "short_name": "JISUH Blast!",
+  "description": "JISUH Blast! — 파스텔 젤리 블록을 8x8 보드에 채우는 러블리 퍼즐",
+  "lang": "ko",
+  "start_url": "/jisuh-blast/",
+  "scope": "/jisuh-blast/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFEAF3",
+  "theme_color": "#FFEAF3",
+  "icons": [
+    {
+      "src": "/jisuh-blast/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/jisuh-blast/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

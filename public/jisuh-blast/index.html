@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFEAF3">
+<meta name="description" content="JISUH Blast! — 파스텔 젤리 블록을 8x8 보드에 채우는 러블리 퍼즐">
+<title>JISUH Blast!</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23FFE7F0'/><rect x='12' y='12' width='18' height='18' rx='6' fill='%23FF9DBE'/><rect x='34' y='12' width='18' height='18' rx='6' fill='%2393CBEE'/><rect x='12' y='34' width='18' height='18' rx='6' fill='%238FE3CD'/><rect x='34' y='34' width='18' height='18' rx='6' fill='%23FFE07A'/></svg>">
+<link rel="icon" type="image/png" sizes="192x192" href="/jisuh-blast/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/jisuh-blast/icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/jisuh-blast/apple-touch-icon.png">
+<link rel="manifest" href="/jisuh-blast/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="JISUH Blast!">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+:root{
+  --board-w: min(94vw, 430px, calc(100svh - 384px));
+  --cell: calc(var(--board-w) / 8);
+  --rose: #F58FB4;
+  --rose-deep: #E86A9B;
+  --pink-deep: #FF5F9C;
+  --ink: #8A5468;
+  --ink-soft: #B98DA0;
+  --ink-faint: #D2AFC0;
+  --font-display: "Arial Rounded MT Bold", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+@supports not (height: 100svh){
+  :root{ --board-w: min(92vw, 430px, calc(100vh - 398px)); }
+}
+*{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body{ height: 100%; margin: 0; }
+body{
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  background: radial-gradient(125% 85% at 50% -6%, #FFFFFF 0%, #FFF3F8 26%, #FFE5F0 58%, #FFD6E7 100%);
+  color: var(--ink);
+  overflow: hidden;
+  user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-font-smoothing: antialiased;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ---------------- background decorations ---------------- */
+.deco{ position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.deco span{ position: absolute; color: #FFC0D6; opacity: .55; font-size: 14px; }
+.deco .heart{ color: #FFB3CE; }
+.deco .spark{ color: #FFFFFF; opacity: .85; text-shadow: 0 0 6px rgba(255,190,215,.9); }
+.deco .float{ animation: floaty 6s ease-in-out infinite; }
+@keyframes floaty{ 0%,100%{ transform: translateY(0) rotate(0deg); } 50%{ transform: translateY(-7px) rotate(6deg); } }
+
+/* ---------------- top bar (fixed) ---------------- */
+.topbar{
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  display: grid; grid-template-columns: 74px 1fr 74px; align-items: start; gap: 4px;
+  padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+  background: linear-gradient(180deg, rgba(255,243,248,.97) 0%, rgba(255,240,247,.93) 60%, rgba(255,238,246,0) 100%);
+  pointer-events: none;
+}
+.topbar > *{ pointer-events: auto; }
+.kitty-wrap{ display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.kitty{ width: 62px; height: 57px; display: block; filter: drop-shadow(0 3px 5px rgba(232,106,155,.22)); }
+.best-pill{
+  display: inline-flex; align-items: center; gap: 3px;
+  max-width: 100%; padding: 2px 8px 2px 6px;
+  background: #FFFFFF; border: 2px solid #FFC9DC; border-radius: 999px;
+  font-size: 10.5px; font-weight: 900; color: var(--rose-deep); letter-spacing: .01em;
+  box-shadow: 0 2px 6px rgba(232,106,155,.16);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.best-pill .cup{ font-size: 10px; line-height: 1; }
+.title{
+  font-family: var(--font-display);
+  justify-self: center;
+  width: max-content;
+  margin: 2px 0 0; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  font-weight: 900; line-height: .9; letter-spacing: -.01em;
+  font-size: clamp(25px, 8vw, 33px);
+  color: #FF6FA5;
+  -webkit-text-stroke: 4.6px #FFFFFF;
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 #FFC3DA, 0 6px 10px rgba(232,106,155,.26);
+  transform: rotate(-1.4deg);
+}
+.title .l2{ margin-top: 3px; color: #FF4E92; }
+.top10-btn{
+  justify-self: end;
+  margin-top: 4px; width: 56px; height: 48px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 15px; border: 2px solid #FFC2D9;
+  background: linear-gradient(180deg, #FFFFFF, #FFEDF5);
+  color: var(--rose-deep); font-weight: 900; font-size: 12px; line-height: 1.02; letter-spacing: .02em;
+  box-shadow: 0 3px 8px rgba(232,106,155,.2), inset 0 1px 0 #fff;
+  cursor: pointer;
+}
+.top10-btn:active{ transform: translateY(1px) scale(.98); }
+.top10-btn .crown{ font-size: 9px; line-height: 1; margin-bottom: 1px; }
+
+/* ---------------- stage ---------------- */
+.stage{
+  position: relative; z-index: 10;
+  height: 100%;
+  padding: calc(90px + env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 0;
+}
+.score-wrap{ display: flex; align-items: center; justify-content: center; min-height: clamp(38px, 5.6vh, 50px); }
+.score{
+  font-family: var(--font-display);
+  font-weight: 900; font-size: clamp(32px, 10.4vw, 42px); line-height: 1;
+  color: var(--pink-deep);
+  -webkit-text-stroke: 5px #FFFFFF; paint-order: stroke fill;
+  text-shadow: 0 4px 0 #FFC3DA, 0 7px 12px rgba(232,106,155,.24);
+  font-variant-numeric: tabular-nums; letter-spacing: .01em;
+}
+.score.bump{ animation: bump .26s ease-out; }
+@keyframes bump{ 0%{ transform: scale(1); } 45%{ transform: scale(1.09); } 100%{ transform: scale(1); } }
+
+/* ---------------- board ---------------- */
+.board-frame{
+  width: var(--board-w); padding: calc(var(--board-w) * .030);
+  border-radius: calc(var(--board-w) * .048);
+  background: linear-gradient(180deg, #FFA6C8 0%, #F586B2 55%, #EF75A5 100%);
+  box-shadow:
+    0 8px 20px rgba(210,100,145,.32),
+    0 2px 0 rgba(255,255,255,.55) inset,
+    0 -3px 0 rgba(198,86,128,.16) inset;
+  flex: 0 0 auto;
+  margin-top: clamp(8px, 3.2vh, 30px);
+}
+.board{
+  position: relative; width: 100%; aspect-ratio: 1 / 1;
+  display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+  background: #FFCFE2;
+  border-radius: calc(var(--board-w) * .034);
+  box-shadow: inset 0 3px 9px rgba(206,110,150,.26), inset 0 -1px 0 rgba(255,255,255,.5);
+  overflow: hidden;
+  touch-action: none;
+}
+.cell{ position: relative; }
+.cell .slot-bg{
+  position: absolute; inset: 6.5%;
+  border-radius: 24%;
+  background: #FFE2EE;
+  box-shadow: inset 0 1px 3px rgba(206,110,150,.16), inset 0 -1px 0 rgba(255,255,255,.65);
+}
+.cell .prev{
+  position: absolute; inset: 6.5%; border-radius: 24%;
+  opacity: 0; transition: opacity .09s linear;
+}
+.cell.prev-on .prev{ opacity: .5; }
+.cell.willclear .slot-bg{ background: #FFC9DE; }
+.cell.willclear .prev{ opacity: .75; }
+.cell.willclear::after{
+  content: ''; position: absolute; inset: 1.5%; border-radius: 24%;
+  border: 2px solid rgba(255,255,255,.96);
+  box-shadow: 0 0 10px rgba(255,255,255,.85), inset 0 0 8px rgba(255,255,255,.7), 0 0 0 1px rgba(255,120,170,.25);
+  pointer-events: none;
+  animation: wcp 0.9s ease-in-out infinite;
+}
+@keyframes wcp{ 0%,100%{ opacity: .75; } 50%{ opacity: 1; } }
+
+.blk{
+  position: absolute; inset: 6.5%; border-radius: 25%;
+  background-image:
+    radial-gradient(48% 36% at 33% 20%, rgba(255,255,255,.98) 0%, rgba(255,255,255,0) 66%),
+    linear-gradient(168deg, var(--c1) 0%, var(--c2) 54%, var(--c3) 100%);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255,255,255,.62),
+    inset 0 -16% 0 rgba(158,52,94,.13),
+    inset 0 10% 0 rgba(255,255,255,.42),
+    0 2px 5px rgba(200,95,140,.24);
+  will-change: transform, opacity;
+}
+.blk.animate-drop{ animation: drop .22s cubic-bezier(.24,1.3,.42,1) both; }
+@keyframes drop{ 0%{ transform: scale(.55); opacity: .3; } 70%{ transform: scale(1.06); } 100%{ transform: scale(1); opacity: 1; } }
+.blk.pop{ animation: pop .28s cubic-bezier(.3,.9,.4,1) both; }
+@keyframes pop{
+  0%{ transform: scale(1); opacity: 1; filter: brightness(1); }
+  35%{ transform: scale(1.22); opacity: 1; filter: brightness(1.5); }
+  100%{ transform: scale(.2) rotate(12deg); opacity: 0; filter: brightness(1.8); }
+}
+.c-pink{ --c1: #FFC2D9; --c2: #FF93BC; --c3: #FF7FAD; }
+.c-mint{ --c1: #B5F2E2; --c2: #7ADCC3; --c3: #63CFB2; }
+.c-lemon{ --c1: #FFF0A6; --c2: #FFDB63; --c3: #FFD045; }
+.c-sky{ --c1: #C0E4F8; --c2: #86C5ED; --c3: #6FB7E5; }
+.c-lavender{ --c1: #DED0FA; --c2: #BBA0EE; --c3: #AB8AE5; }
+
+/* ---------------- tray ---------------- */
+.tray{
+  width: var(--board-w); flex: 0 0 auto;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  height: calc(var(--board-w) * .265);
+  padding: calc(var(--board-w) * .022);
+  border-radius: calc(var(--board-w) * .045);
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,231,241,.94));
+  box-shadow: 0 5px 14px rgba(224,118,158,.2), inset 0 1px 0 #fff, 0 0 0 2px rgba(255,255,255,.75);
+  touch-action: none;
+  margin-top: clamp(20px, 11.5vh, 110px);
+}
+.slot{ position: relative; border-radius: calc(var(--board-w) * .03); }
+.slot.grab{ cursor: grab; }
+.slot.dragging .mini{ opacity: .18; }
+.slot .mini{ position: absolute; }
+.slot .mini .blk{ pointer-events: none; }
+.slot-empty-dot{ position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(232,106,155,.14); }
+
+.footer-deco{ position: fixed; left: 0; right: 0; bottom: 0; height: 185px; z-index: 5; pointer-events: none; opacity: .9; }
+.footer-deco svg{ width: 100%; height: 100%; display: block; }
+.footer-deco span{ position: absolute; color: #FF9EC2; font-size: 15px; opacity: .75; }
+.footer-deco span:nth-of-type(1){ left: 11%; bottom: 26px; transform: rotate(-9deg); }
+.footer-deco span:nth-of-type(2){ left: 47%; bottom: 14px; font-size: 11px; transform: rotate(7deg); }
+.footer-deco span:nth-of-type(3){ right: 13%; bottom: 34px; font-size: 18px; transform: rotate(10deg); }
+
+/* ---------------- drag ghost ---------------- */
+.ghost{ position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; display: none; }
+.ghost .gcell{ position: absolute; }
+.ghost .blk{ inset: 0; filter: drop-shadow(0 6px 10px rgba(200,90,135,.3)); }
+
+/* ---------------- toast ---------------- */
+.toast{
+  position: fixed; left: 50%; top: 44%; z-index: 55; transform: translate(-50%, 10px);
+  padding: 7px 16px; border-radius: 999px;
+  background: linear-gradient(180deg, #FFFFFF, #FFEAF3);
+  color: var(--rose-deep); font-weight: 900; font-size: 15px;
+  box-shadow: 0 6px 16px rgba(232,106,155,.26), inset 0 0 0 2px #FFC9DC;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+  white-space: nowrap;
+}
+.toast.show{ opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------------- overlays ---------------- */
+.overlay{
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px;
+  background: rgba(255,196,219,.55);
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+  opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s;
+}
+.overlay.show{ opacity: 1; visibility: visible; }
+.card{
+  width: min(100%, 380px); max-height: 88vh; overflow: auto;
+  border-radius: 26px; padding: 20px 18px 18px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF7FB 55%, #FFEFF6 100%);
+  box-shadow: 0 18px 40px rgba(200,90,135,.28), inset 0 0 0 2.5px #FFC9DC;
+  transform: translateY(10px) scale(.98); transition: transform .22s cubic-bezier(.24,1.2,.4,1);
+  text-align: center;
+}
+.overlay.show .card{ transform: translateY(0) scale(1); }
+.card h2{
+  font-family: var(--font-display);
+  margin: 0 0 4px; font-size: 24px; font-weight: 900; color: #FF4E92;
+  -webkit-text-stroke: 3.4px #FFF; paint-order: stroke fill;
+  text-shadow: 0 3px 0 #FFC3DA;
+  letter-spacing: .01em;
+}
+.card .sub{ margin: 0 0 14px; font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
+.over-score{ font-size: 46px; font-weight: 900; line-height: 1; color: var(--pink-deep); font-variant-numeric: tabular-nums;
+  -webkit-text-stroke: 4.6px #FFF; paint-order: stroke fill; text-shadow: 0 4px 0 #FFC3DA; }
+.over-label{ font-size: 11px; font-weight: 800; letter-spacing: .16em; color: var(--ink-faint); margin-bottom: 2px; }
+.over-best{ margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--rose-deep); }
+.over-best .new{ display: inline-block; margin-left: 5px; padding: 1px 7px; border-radius: 999px; background: #FF6FA5; color: #fff; font-size: 10px; vertical-align: 1px; }
+.save-box{ margin-top: 15px; padding-top: 14px; border-top: 2px dashed #FFD8E6; }
+.save-note{ font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; min-height: 15px; }
+.save-note.warn{ color: #E4577F; }
+.save-row{ display: flex; gap: 7px; }
+.save-row input{
+  flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 13px;
+  border-radius: 13px; border: 2px solid #FFD0E1; background: #FFF9FC;
+  font: inherit; font-size: 15px; font-weight: 700; color: var(--ink);
+  outline: none;
+}
+.save-row input:focus{ border-color: #FF9DBE; background: #fff; box-shadow: 0 0 0 3px rgba(255,157,190,.18); }
+.save-row input:disabled{ opacity: .5; }
+.save-row input.warn{ border-color: #F2638F; animation: shake .3s; }
+@keyframes shake{ 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-4px); } 75%{ transform: translateX(4px); } }
+.btn{
+  border: none; cursor: pointer; font: inherit; font-weight: 900;
+  border-radius: 15px; padding: 0 18px; height: 48px; font-size: 15px;
+  transition: transform .12s ease, filter .12s ease;
+}
+.btn:active{ transform: translateY(1px) scale(.99); }
+.btn-primary{
+  background: linear-gradient(180deg, #FF9FC4 0%, #FF7CAE 100%);
+  color: #fff; box-shadow: 0 5px 0 #E86A9B, 0 8px 16px rgba(232,106,155,.3);
+  text-shadow: 0 1px 0 rgba(180,60,105,.25);
+}
+.btn-primary:disabled{ background: linear-gradient(180deg,#FFD3E2,#FFC2D6); color: #fff; box-shadow: 0 4px 0 #F0B7CB; text-shadow: none; }
+.btn-save{ height: 44px; flex: 0 0 auto; padding: 0 15px; font-size: 14px; border-radius: 13px; }
+.btn-ghost{ background: #FFF4F9; color: var(--rose-deep); box-shadow: inset 0 0 0 2px #FFC2D9, 0 4px 0 #FFD9E6; }
+.over-actions{ display: flex; gap: 8px; margin-top: 14px; }
+.over-actions .btn{ flex: 1 1 0; min-width: 0; padding: 0 10px; white-space: nowrap; }
+
+/* rank card */
+.rank-card{ padding: 18px 16px 16px; }
+.rank-head{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.rank-head h2{ margin: 0; font-size: 22px; font-family: var(--font-display); }
+.rank-close{
+  width: 34px; height: 34px; border-radius: 50%; border: 2px solid #FFD0E1; background: #fff;
+  color: var(--rose-deep); font-size: 16px; font-weight: 900; line-height: 1; cursor: pointer;
+}
+.rank-list{ display: flex; flex-direction: column; gap: 5px; }
+.rank-row, .rank-head-row{
+  display: grid; grid-template-columns: 30px 1fr auto 74px; align-items: center; gap: 6px;
+  padding: 9px 10px; border-radius: 13px; background: #FFF6FA;
+  font-size: 13px; font-weight: 700; color: var(--ink);
+}
+.rank-head-row{ background: transparent; padding: 0 10px 2px; font-size: 10.5px; letter-spacing: .06em; color: var(--ink-faint); font-weight: 800; }
+.rank-head-row span:nth-child(1){ text-align: center; }
+.rank-head-row span:nth-child(2){ text-align: left; }
+.rank-head-row span:nth-child(3){ text-align: right; }
+.rank-head-row span:nth-child(4){ text-align: right; }
+.rank-row .rr{ font-weight: 900; color: var(--ink-faint); text-align: center; }
+.rank-row.r1{ background: linear-gradient(180deg,#FFF3C4,#FFE9A6); }
+.rank-row.r2{ background: linear-gradient(180deg,#F4F6FA,#E8EDF5); }
+.rank-row.r3{ background: linear-gradient(180deg,#FFE6D2,#FFD8BC); }
+.rank-row.r1 .rr{ color: #D99A16; } .rank-row.r2 .rr{ color: #8C9AAE; } .rank-row.r3 .rr{ color: #C07940; }
+.rank-row .rn{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.rank-row .rs{ font-weight: 900; color: var(--rose-deep); font-variant-numeric: tabular-nums; text-align: right; }
+.rank-row .rd{ font-size: 11px; color: var(--ink-faint); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.rank-row.me{ box-shadow: inset 0 0 0 2px #FF9DBE; }
+.rank-empty{ padding: 26px 10px 30px; color: var(--ink-soft); font-size: 13px; font-weight: 700; line-height: 1.6; }
+.rank-empty .big{ display: block; font-size: 28px; margin-bottom: 6px; }
+.sync-note{ margin-top: 11px; font-size: 10.5px; font-weight: 700; color: var(--ink-faint); letter-spacing: .02em; min-height: 13px; }
+.sync-note.off{ color: #D99AAE; }
+.rank-again{ margin-top: 12px; width: 100%; }
+[hidden]{ display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="deco" aria-hidden="true">
+  <span class="heart" style="left:6%;top:16%">♥</span>
+  <span class="spark float" style="left:16%;top:9%">✦</span>
+  <span class="heart" style="right:9%;top:12%;font-size:18px">♥</span>
+  <span class="spark" style="right:22%;top:23%">✧</span>
+  <span class="spark float" style="left:9%;top:44%">✦</span>
+  <span class="heart" style="right:6%;top:52%;font-size:11px">♥</span>
+  <span class="spark" style="left:20%;top:72%">✧</span>
+  <span class="heart" style="right:14%;top:78%;font-size:13px">♥</span>
+  <span class="spark float" style="left:78%;top:86%">✦</span>
+</div>
+
+<header class="topbar">
+  <div class="kitty-wrap">
+    <svg class="kitty" viewBox="0 0 120 112" aria-hidden="true">
+      <path d="M26 50 C20 36 20 22 25 13 C36 19 46 27 52 35 Z" fill="#FFFFFF" stroke="#F3BBD1" stroke-width="3.2" stroke-linejoin="round"/>
+      <path d="M94 50 C100 36 100 22 95 13 C84 19 74 27 68 35 Z" fill="#FFFFFF" stroke="#F3BBD1" stroke-width="3.2" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="64" rx="39" ry="33" fill="#FFFFFF" stroke="#F3BBD1" stroke-width="3.2"/>
+      <ellipse cx="45" cy="64" rx="4.3" ry="5.6" fill="#54343F"/>
+      <ellipse cx="75" cy="64" rx="4.3" ry="5.6" fill="#54343F"/>
+      <circle cx="46.6" cy="61.8" r="1.5" fill="#FFFFFF"/>
+      <circle cx="76.6" cy="61.8" r="1.5" fill="#FFFFFF"/>
+      <ellipse cx="36" cy="75" rx="6.4" ry="3.8" fill="#FFD6E4"/>
+      <ellipse cx="84" cy="75" rx="6.4" ry="3.8" fill="#FFD6E4"/>
+      <ellipse cx="60" cy="73.5" rx="3.7" ry="2.9" fill="#FFAFC9"/>
+      <path d="M15 60 L33 64.5 M15 72 L33 70 M105 60 L87 64.5 M105 72 L87 70" stroke="#F3BBD1" stroke-width="3" stroke-linecap="round"/>
+      <g transform="translate(36 30) rotate(-18) scale(1.06)">
+        <path d="M0 0 C-13 -10 -23 -5 -21.5 3.5 C-20 12 -8 10.5 0 4 Z" fill="#FFA2C6" stroke="#F07EAE" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M0 4 C8.5 11.5 20.5 9.5 22 1.5 C23.5 -6.5 13 -11.5 0 0 Z" fill="#FFA2C6" stroke="#F07EAE" stroke-width="2.2" stroke-linejoin="round"/>
+        <circle cx="0.5" cy="3.6" r="4.1" fill="#FFC7DC" stroke="#F07EAE" stroke-width="1.6"/>
+      </g>
+    </svg>
+    <div class="best-pill"><span class="cup">🏆</span><span id="bestVal">0</span></div>
+  </div>
+
+  <h1 class="title"><span class="l1">JISUH</span><span class="l2">Blast!</span></h1>
+
+  <button class="top10-btn" id="btnTop" aria-label="TOP 10 순위표 보기">
+    <span class="crown">👑</span><span>TOP</span><span>10</span>
+  </button>
+</header>
+
+<main class="stage">
+  <div class="score-wrap"><div class="score" id="scoreVal">0</div></div>
+  <div class="board-frame"><div class="board" id="board"></div></div>
+  <div class="tray" id="tray">
+    <div class="slot" data-i="0"></div>
+    <div class="slot" data-i="1"></div>
+    <div class="slot" data-i="2"></div>
+  </div>
+</main>
+
+<div class="footer-deco" aria-hidden="true">
+  <svg viewBox="0 0 390 130" preserveAspectRatio="none">
+    <defs><linearGradient id="wv" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFCFE2" stop-opacity=".62"/>
+      <stop offset="100%" stop-color="#FFBFD7" stop-opacity=".28"/>
+    </linearGradient></defs>
+    <path d="M0,52 C78,22 138,72 208,58 C278,44 326,20 390,44 L390,130 L0,130 Z" fill="url(#wv)"/>
+  </svg>
+  <span>♥</span><span>♥</span><span>♥</span>
+</div>
+<div class="ghost" id="ghost" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- game over -->
+<div class="overlay" id="overOverlay">
+  <div class="card" role="dialog" aria-modal="true" aria-label="게임 오버">
+    <h2>Game Over</h2>
+    <p class="sub">보드에 놓을 블록이 없어요</p>
+    <div class="over-label">SCORE</div>
+    <div class="over-score" id="overScore">0</div>
+    <div class="over-best">🏆 BEST <span id="overBest">0</span><span class="new" id="newBadge" hidden>NEW!</span></div>
+    <div class="save-box" id="saveBox">
+      <div class="save-note" id="saveNote">🏆 첫 기록을 남겨 보세요</div>
+      <div class="save-row">
+        <input id="nameInput" type="text" maxlength="12" placeholder="이름 (예: 지수)" autocomplete="off" enterkeyhint="done">
+        <button class="btn btn-primary btn-save" id="saveRecBtn">기록 저장</button>
+      </div>
+    </div>
+    <div class="over-actions">
+      <button class="btn btn-primary" id="againBtn">다시 하기</button>
+      <button class="btn btn-ghost" id="overTopBtn">TOP 10</button>
+    </div>
+  </div>
+</div>
+
+<!-- top10 -->
+<div class="overlay" id="topOverlay">
+  <div class="card rank-card" role="dialog" aria-modal="true" aria-label="TOP 10">
+    <div class="rank-head">
+      <h2>👑 TOP 10</h2>
+      <button class="rank-close" id="rankClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="rank-head-row"><span>#</span><span>이름</span><span>점수</span><span>날짜</span></div>
+    <div class="rank-list" id="rankBody"></div>
+    <div class="sync-note" id="syncNote"></div>
+    <button class="btn btn-primary rank-again" id="rankAgainBtn" hidden>다시 하기</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= board / shapes ================= */
+  var SIZE = 8;
+  var COLORS = ['pink', 'mint', 'lemon', 'sky', 'lavender'];
+
+  var SHAPES = [
+    { id: 'dot',  wt: 3, cells: [[0,0]] },
+    { id: 'h2',   wt: 7, cells: [[0,0],[1,0]] },
+    { id: 'v2',   wt: 7, cells: [[0,0],[0,1]] },
+    { id: 'h3',   wt: 6, cells: [[0,0],[1,0],[2,0]] },
+    { id: 'v3',   wt: 6, cells: [[0,0],[0,1],[0,2]] },
+    { id: 'h4',   wt: 2, cells: [[0,0],[1,0],[2,0],[3,0]] },
+    { id: 'v4',   wt: 2, cells: [[0,0],[0,1],[0,2],[0,3]] },
+    { id: 'h5',   wt: 1, cells: [[0,0],[1,0],[2,0],[3,0],[4,0]] },
+    { id: 'v5',   wt: 1, cells: [[0,0],[0,1],[0,2],[0,3],[0,4]] },
+    { id: 'sq2',  wt: 6, cells: [[0,0],[1,0],[0,1],[1,1]] },
+    { id: 'sq3',  wt: 1, cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]] },
+    { id: 'cor1', wt: 4, cells: [[0,0],[1,0],[0,1]] },
+    { id: 'cor2', wt: 4, cells: [[0,0],[1,0],[1,1]] },
+    { id: 'cor3', wt: 4, cells: [[0,0],[0,1],[1,1]] },
+    { id: 'cor4', wt: 4, cells: [[1,0],[0,1],[1,1]] },
+    { id: 'L1',   wt: 2, cells: [[0,0],[0,1],[0,2],[1,2]] },
+    { id: 'L2',   wt: 2, cells: [[0,0],[1,0],[1,1],[1,2]] },
+    { id: 'L3',   wt: 2, cells: [[0,0],[1,0],[0,1],[0,2]] },
+    { id: 'L4',   wt: 2, cells: [[0,0],[1,0],[2,0],[2,1]] },
+    { id: 'L5',   wt: 2, cells: [[0,0],[1,0],[2,0],[0,1]] },
+    { id: 'L6',   wt: 2, cells: [[0,0],[0,1],[1,1],[2,1]] },
+    { id: 'L7',   wt: 2, cells: [[2,0],[0,1],[1,1],[2,1]] },
+    { id: 'L8',   wt: 2, cells: [[0,0],[0,1],[1,1],[0,2]] },
+    { id: 'T1',   wt: 1, cells: [[0,0],[1,0],[2,0],[1,1]] },
+    { id: 'T2',   wt: 1, cells: [[1,0],[0,1],[1,1],[2,1]] },
+    { id: 'T3',   wt: 1, cells: [[0,0],[0,1],[1,1],[0,2]] },
+    { id: 'S1',   wt: 1, cells: [[1,0],[2,0],[0,1],[1,1]] },
+    { id: 'S2',   wt: 1, cells: [[0,0],[1,0],[1,1],[2,1]] },
+    { id: 'S3',   wt: 1, cells: [[0,0],[0,1],[1,1],[1,2]] },
+    { id: 'S4',   wt: 1, cells: [[1,0],[1,1],[0,1],[0,2]] },
+    { id: 'r23',  wt: 1, cells: [[0,0],[1,0],[0,1],[1,1],[0,2],[1,2]] },
+    { id: 'r32',  wt: 1, cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]] }
+  ];
+
+  var SHAPE_BY_ID = {};
+  (function normalizeShapes() {
+    for (var i = 0; i < SHAPES.length; i++) {
+      var s = SHAPES[i], minx = 99, miny = 99, maxx = -1, maxy = -1;
+      for (var j = 0; j < s.cells.length; j++) {
+        minx = Math.min(minx, s.cells[j][0]); maxx = Math.max(maxx, s.cells[j][0]);
+        miny = Math.min(miny, s.cells[j][1]); maxy = Math.max(maxy, s.cells[j][1]);
+      }
+      s.cells = s.cells.map(function (c) { return [c[0] - minx, c[1] - miny]; });
+      s.w = maxx - minx + 1;
+      s.h = maxy - miny + 1;
+      SHAPE_BY_ID[s.id] = s;
+    }
+  })();
+
+  var TOTAL_W = SHAPES.reduce(function (a, s) { return a + s.wt; }, 0);
+
+  function randPiece() {
+    var r = Math.random() * TOTAL_W, pick = SHAPES[0];
+    for (var i = 0; i < SHAPES.length; i++) {
+      r -= SHAPES[i].wt;
+      if (r <= 0) { pick = SHAPES[i]; break; }
+    }
+    return makePiece(pick.id, COLORS[Math.floor(Math.random() * COLORS.length)]);
+  }
+  function makePiece(id, color) {
+    var s = SHAPE_BY_ID[id] || SHAPE_BY_ID.dot;
+    var cells = s.cells.map(function (c) { return [c[0], c[1]]; });
+    return { id: s.id, color: color || 'pink', cells: cells, w: s.w, h: s.h, size: cells.length };
+  }
+
+  /* ================= elements ================= */
+  var boardEl = document.getElementById('board');
+  var trayEl = document.getElementById('tray');
+  var slots = [].slice.call(trayEl.querySelectorAll('.slot'));
+  var ghostEl = document.getElementById('ghost');
+  var scoreEl = document.getElementById('scoreVal');
+  var bestEl = document.getElementById('bestVal');
+  var toastEl = document.getElementById('toast');
+  var overOverlay = document.getElementById('overOverlay');
+  var overScoreEl = document.getElementById('overScore');
+  var overBestEl = document.getElementById('overBest');
+  var newBadge = document.getElementById('newBadge');
+  var nameInput = document.getElementById('nameInput');
+  var saveNote = document.getElementById('saveNote');
+  var saveRecBtn = document.getElementById('saveRecBtn');
+  var saveBox = document.getElementById('saveBox');
+  var againBtn = document.getElementById('againBtn');
+  var overTopBtn = document.getElementById('overTopBtn');
+  var btnTop = document.getElementById('btnTop');
+  var topOverlay = document.getElementById('topOverlay');
+  var rankBody = document.getElementById('rankBody');
+  var rankClose = document.getElementById('rankClose');
+  var rankAgainBtn = document.getElementById('rankAgainBtn');
+  var syncNoteEl = document.getElementById('syncNote');
+
+  /* ================= board cells ================= */
+  var cells = [];
+  (function buildBoard() {
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < SIZE * SIZE; i++) {
+      var c = document.createElement('div');
+      c.className = 'cell';
+      c.dataset.i = String(i);
+      var bg = document.createElement('div'); bg.className = 'slot-bg';
+      var pv = document.createElement('div'); pv.className = 'prev';
+      var blk = document.createElement('div'); blk.className = 'blk'; blk.style.display = 'none';
+      c.appendChild(bg); c.appendChild(pv); c.appendChild(blk);
+      cells.push({ el: c, blk: blk, prev: pv });
+      frag.appendChild(c);
+    }
+    boardEl.appendChild(frag);
+  })();
+
+  /* ================= state ================= */
+  var grid = new Array(SIZE * SIZE).fill(null);
+  var pieces = [null, null, null];
+  var score = 0;
+  var combo = 0;
+  var busy = false;
+  var over = false;
+  var CLEAR_MS = 280, DROP_MS = 120;
+  var best = 0;
+  var newBestThisGame = false;
+  var lastDrop = -1;
+
+  function idx(r, c) { return r * SIZE + c; }
+  function cellAt(i) { return cells[i]; }
+
+  function drawCell(i, animate) {
+    var v = grid[i], cel = cells[i];
+    if (v) {
+      cel.blk.className = 'blk c-' + v + (animate ? ' animate-drop' : '');
+      cel.blk.style.display = 'block';
+    } else {
+      cel.blk.className = 'blk';
+      cel.blk.style.display = 'none';
+    }
+  }
+  function drawAll() {
+    for (var i = 0; i < grid.length; i++) drawCell(i, i === lastDrop);
+    lastDrop = -1;
+  }
+
+  function fillColor(el, color) { el.className = 'prev c-' + color; }
+
+  /* ================= storage ================= */
+  function load(k, d) { try { var v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  var BEST_KEY = 'jisuh.best';
+  var NUM = function (v) { return v.toLocaleString('en-US'); };
+
+  function setScore(v) {
+    score = v;
+    scoreEl.textContent = NUM(score);
+    scoreEl.classList.remove('bump');
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add('bump');
+  }
+  function setBest(v) {
+    if (v > best) {
+      best = v;
+      save(BEST_KEY, String(best));
+      bestEl.textContent = NUM(best);
+    }
+  }
+
+  /* ================= rules ================= */
+  function canPlace(piece, row, col) {
+    for (var i = 0; i < piece.cells.length; i++) {
+      var r = row + piece.cells[i][1], c = col + piece.cells[i][0];
+      if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return false;
+      if (grid[idx(r, c)]) return false;
+    }
+    return true;
+  }
+  function anyFit() {
+    for (var p = 0; p < pieces.length; p++) {
+      var piece = pieces[p];
+      if (!piece) continue;
+      for (var r = 0; r <= SIZE - piece.h; r++)
+        for (var c = 0; c <= SIZE - piece.w; c++)
+          if (canPlace(piece, r, c)) return true;
+    }
+    return false;
+  }
+  function fullLines() {
+    var rows = [], cols = [];
+    for (var r = 0; r < SIZE; r++) {
+      var ok = true;
+      for (var c = 0; c < SIZE; c++) if (!grid[idx(r, c)]) { ok = false; break; }
+      if (ok) rows.push(r);
+    }
+    for (var c2 = 0; c2 < SIZE; c2++) {
+      var ok2 = true;
+      for (var r2 = 0; r2 < SIZE; r2++) if (!grid[idx(r2, c2)]) { ok2 = false; break; }
+      if (ok2) cols.push(c2);
+    }
+    return { rows: rows, cols: cols, count: rows.length + cols.length };
+  }
+
+  /* ================= tray render ================= */
+  function renderTray() {
+    for (var s = 0; s < 3; s++) {
+      var slot = slots[s];
+      slot.innerHTML = '';
+      slot.classList.toggle('empty', !pieces[s]);
+      slot.classList.remove('dragging');
+      var piece = pieces[s];
+      if (!piece) { continue; }
+      var mini = buildMini(piece, slot);
+      slot.appendChild(mini);
+      slot.classList.add('grab');
+      slot.dataset.i = String(s);
+    }
+  }
+  function buildMini(piece, slot) {
+    var sw = slot.clientWidth || 100, sh = slot.clientHeight || 60;
+    var pitch = Math.min((sw - 8) / piece.w, (sh - 8) / piece.h, boardPitch() * 0.62);
+    pitch = Math.max(8, pitch);
+    var wrap = document.createElement('div');
+    wrap.className = 'mini';
+    wrap.style.position = 'absolute';
+    wrap.style.width = (pitch * piece.w) + 'px';
+    wrap.style.height = (pitch * piece.h) + 'px';
+    wrap.style.left = Math.round((sw - pitch * piece.w) / 2) + 'px';
+    wrap.style.top = Math.round((sh - pitch * piece.h) / 2) + 'px';
+    for (var i = 0; i < piece.cells.length; i++) {
+      var d = document.createElement('div');
+      d.className = 'blk c-' + piece.color;
+      d.style.position = 'absolute';
+      d.style.inset = 'auto';
+      d.style.width = pitch + 'px';
+      d.style.height = pitch + 'px';
+      d.style.left = (piece.cells[i][0] * pitch) + 'px';
+      d.style.top = (piece.cells[i][1] * pitch) + 'px';
+      d.style.borderRadius = Math.max(4, pitch * 0.25) + 'px';
+      wrap.appendChild(d);
+    }
+    return wrap;
+  }
+  function boardPitch() { return boardEl.getBoundingClientRect().width / SIZE; }
+
+  /* ================= ghost drag ================= */
+  var drag = null;
+
+  function buildGhost(piece, pitch) {
+    ghostEl.innerHTML = '';
+    ghostEl.style.width = (pitch * piece.w) + 'px';
+    ghostEl.style.height = (pitch * piece.h) + 'px';
+    for (var i = 0; i < piece.cells.length; i++) {
+      var c = document.createElement('div');
+      c.className = 'gcell';
+      c.style.width = pitch + 'px'; c.style.height = pitch + 'px';
+      c.style.left = (piece.cells[i][0] * pitch) + 'px';
+      c.style.top = (piece.cells[i][1] * pitch) + 'px';
+      var b = document.createElement('div');
+      b.className = 'blk c-' + piece.color;
+      b.style.inset = (pitch * 0.065) + 'px';
+      c.appendChild(b);
+      ghostEl.appendChild(c);
+    }
+    ghostEl.style.display = 'block';
+  }
+
+  function clearPreview() {
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].el.classList.remove('prev-on', 'willclear');
+      cells[i].prev.className = 'prev';
+    }
+  }
+
+  function previewCells(piece, row, col) {
+    clearPreview();
+    if (row == null) return;
+    if (!canPlace(piece, row, col)) return;
+    var k;
+    for (k = 0; k < piece.cells.length; k++) {
+      var r = row + piece.cells[k][1], c = col + piece.cells[k][0];
+      var cel = cells[idx(r, c)];
+      cel.el.classList.add('prev-on');
+      fillColor(cel.prev, piece.color);
+    }
+    /* would-clear highlight */
+    var tmp = [];
+    for (k = 0; k < piece.cells.length; k++) tmp.push(idx(row + piece.cells[k][1], col + piece.cells[k][0]));
+    for (k = 0; k < tmp.length; k++) grid[tmp[k]] = '__p__';
+    var fl = fullLines();
+    for (k = 0; k < tmp.length; k++) grid[tmp[k]] = null;
+    for (var i = 0; i < fl.rows.length; i++)
+      for (var c2 = 0; c2 < SIZE; c2++) cells[idx(fl.rows[i], c2)].el.classList.add('willclear');
+    for (var j = 0; j < fl.cols.length; j++)
+      for (var r2 = 0; r2 < SIZE; r2++) cells[idx(r2, fl.cols[j])].el.classList.add('willclear');
+  }
+
+  function pointerCell(px, py, piece, pitch, touch) {
+    var offY = touch ? pitch * 1.75 : 0;
+    var cx = px, cy = py - offY;
+    var b = boardEl.getBoundingClientRect();
+    var col = Math.round((cx - b.left) / pitch - piece.w / 2);
+    var row = Math.round((cy - b.top) / pitch - piece.h / 2);
+    return { row: row, col: col, cx: cx, cy: cy };
+  }
+
+  function onDown(e) {
+    if (busy || over) return;
+    var slot = e.target.closest ? e.target.closest('.slot') : null;
+    if (!slot) return;
+    var i = parseInt(slot.dataset.i, 10);
+    if (!pieces[i]) return;
+    e.preventDefault();
+    var pitch = boardPitch();
+    drag = { i: i, piece: pieces[i], pitch: pitch, touch: e.pointerType === 'touch', moved: false, x: e.clientX, y: e.clientY };
+    buildGhost(drag.piece, pitch);
+    positionGhost(e.clientX, e.clientY);
+    slot.classList.add('dragging');
+    if (e.pointerId != null) { try { trayEl.setPointerCapture && trayEl.setPointerCapture(e.pointerId); } catch (err) {} }
+  }
+
+  function positionGhost(px, py) {
+    if (!drag) return;
+    var g = pointerCell(px, py, drag.piece, drag.pitch, drag.touch);
+    ghostEl.style.left = (g.cx - (drag.piece.w * drag.pitch) / 2) + 'px';
+    ghostEl.style.top = (g.cy - (drag.piece.h * drag.pitch) / 2) + 'px';
+    return g;
+  }
+
+  function onMove(e) {
+    if (!drag) return;
+    if (Math.abs(e.clientX - drag.x) > 3 || Math.abs(e.clientY - drag.y) > 3) drag.moved = true;
+    e.preventDefault();
+    var g = positionGhost(e.clientX, e.clientY);
+    previewCells(drag.piece, g.row, g.col);
+    drag.row = g.row; drag.col = g.col;
+    drag.valid = canPlace(drag.piece, g.row, g.col);
+  }
+
+  function endDrag(commit) {
+    if (!drag) return;
+    var d = drag;
+    drag = null;
+    ghostEl.style.display = 'none';
+    ghostEl.innerHTML = '';
+    clearPreview();
+    var slot = slots[d.i];
+    if (slot) slot.classList.remove('dragging');
+    if (!commit || !d.valid) return;
+    placePiece(d.i, d.row, d.col);
+  }
+
+  function onUp(e) {
+    if (!drag) return;
+    e.preventDefault();
+    endDrag(true);
+  }
+  function onCancel() { endDrag(false); }
+
+  trayEl.addEventListener('pointerdown', onDown);
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onCancel);
+  document.addEventListener('contextmenu', function (e) { if (drag) e.preventDefault(); });
+
+  /* ================= placing / clearing ================= */
+  function placePiece(i, row, col) {
+    if (busy || over) return false;
+    var piece = pieces[i];
+    if (!piece || !canPlace(piece, row, col)) return false;
+    var k;
+    for (k = 0; k < piece.cells.length; k++) {
+      var cellIdx = idx(row + piece.cells[k][1], col + piece.cells[k][0]);
+      grid[cellIdx] = piece.color;
+      drawCell(cellIdx, true);
+    }
+    pieces[i] = null;
+    renderTray();
+    setScore(score + piece.size);
+    if (score > best) { setBest(score); newBestThisGame = true; }
+    busy = true;
+
+    var fl = fullLines();
+    var done = function () {
+      busy = false;
+      if (!anyFit()) { showGameOver(); return; }
+    };
+    if (fl.count > 0) {
+      combo += 1;
+      var gained = 100 * fl.count * fl.count * Math.min(4, 1 + 0.5 * (combo - 1));
+      gained = Math.round(gained);
+      var flash = [];
+      for (var a = 0; a < fl.rows.length; a++) for (var c = 0; c < SIZE; c++) flash.push(idx(fl.rows[a], c));
+      for (var b = 0; b < fl.cols.length; b++) for (var r = 0; r < SIZE; r++) flash.push(idx(r, fl.cols[b]));
+      flash.forEach(function (fi) { cells[fi].blk.classList.add('pop'); });
+      showToast(fl.count > 1 ? (fl.count + '줄 클리어! +' + NUM(gained)) : (combo > 1 ? 'COMBO x' + combo + ' +' + NUM(gained) : '+' + NUM(gained)));
+      setTimeout(function () {
+        flash.forEach(function (fi) {
+          grid[fi] = null;
+          var blk = cells[fi].blk;
+          blk.classList.remove('pop');
+          blk.className = 'blk';
+          blk.style.display = 'none';
+        });
+        setScore(score + gained);
+        if (score > best) { setBest(score); newBestThisGame = true; }
+        if (!pieces.some(function (p) { return !!p; })) {
+          pieces = [randPiece(), randPiece(), randPiece()];
+          renderTray();
+        }
+        done();
+      }, CLEAR_MS);
+    } else {
+      combo = 0;
+      if (!pieces.some(function (p) { return !!p; })) {
+        pieces = [randPiece(), randPiece(), randPiece()];
+        renderTray();
+      }
+      setTimeout(done, DROP_MS);
+    }
+    return true;
+  }
+
+  var toastTimer = null;
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1000);
+  }
+
+  /* ================= game flow ================= */
+  function newGame() {
+    grid = new Array(SIZE * SIZE).fill(null);
+    score = 0; combo = 0; busy = false; over = false; savedThisGame = false; saving = false;
+    pieces = [randPiece(), randPiece(), randPiece()];
+    newBestThisGame = false;
+    overOverlay.classList.remove('show');
+    topOverlay.classList.remove('show');
+    scoreEl.textContent = '0';
+    newBadge.hidden = true;
+    drawAll();
+    renderTray();
+  }
+
+  function restart() {
+    newGame();
+    /* first pieces must be placeable on an empty board */
+  }
+
+  function showGameOver() {
+    over = true;
+    overScoreEl.textContent = NUM(score);
+    overBestEl.textContent = NUM(best);
+    newBadge.hidden = !(newBestThisGame && score > 0);
+    setupSaveBox();
+    overOverlay.classList.add('show');
+    rankAgainBtn.hidden = false;
+    syncShared(null, function () { if (over && overOverlay.classList.contains('show')) setupSaveBox(); });
+  }
+
+  againBtn.addEventListener('click', function () { restart(); });
+  overTopBtn.addEventListener('click', function () { openTop10(null); });
+  rankAgainBtn.addEventListener('click', function () { restart(); });
+
+  /* ================= TOP 10 (shared via Supabase) ================= */
+  var TOP_KEY = 'jisuh.top10';
+  var NAME_KEY = 'jisuh.name';
+
+  var SB_URL = 'https://kjrmaxxzuwozfosniyrx.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtqcm1heHh6dXdvemZvc25peXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNTA4MjcsImV4cCI6MjA5MzgyNjgyN30.PMm3pCX1ygvQOYGLbfXxG5VuA8ELFpHnAi6pjetVQD4';
+  var SB_ROW = 'jisuh-blast-top10';
+
+  function escHTML(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function cmpRec(a, b) { return b.score - a.score || b.ts - a.ts; }
+  function recKey(r) { return r.name + '|' + r.score + '|' + r.date; }
+
+  function normRec(r) {
+    if (!r) return null;
+    var sc = parseInt(r.score, 10);
+    var nm = String(r.name == null ? '' : r.name).slice(0, 12).trim();
+    if (!nm || !isFinite(sc) || sc <= 0) return null;
+    return { name: nm, score: sc, date: r.date ? String(r.date).slice(0, 10) : '', ts: parseInt(r.ts, 10) || 0 };
+  }
+  function normRecs(arr) {
+    var out = [];
+    if (!Array.isArray(arr)) return out;
+    for (var i = 0; i < arr.length; i++) { var r = normRec(arr[i]); if (r) out.push(r); }
+    out.sort(cmpRec);
+    return out.slice(0, 10);
+  }
+  function mergeRecs() {
+    var seen = {}, out = [];
+    for (var a = 0; a < arguments.length; a++) {
+      var list = arguments[a] || [];
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i], k = recKey(r);
+        if (seen[k]) continue;
+        seen[k] = 1;
+        out.push(r);
+      }
+    }
+    out.sort(cmpRec);
+    return out.slice(0, 10);
+  }
+  function sameRecs(a, b) {
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (recKey(a[i]) !== recKey(b[i]) || a[i].ts !== b[i].ts) return false;
+    }
+    return true;
+  }
+
+  function loadTop10() {
+    try {
+      var raw = localStorage.getItem(TOP_KEY);
+      if (!raw) return [];
+      return normRecs(JSON.parse(raw));
+    } catch (e) { return []; }
+  }
+  function saveTop10() { save(TOP_KEY, JSON.stringify(top10)); }
+
+  var SYNC_TXT = { loading: '불러오는 중…', synced: '전체 기기 공유 · 동기화됨', offline: '오프라인 캐시 · 이 기기에만 저장' };
+  function setSync(state) {
+    if (!syncNoteEl) return;
+    syncNoteEl.textContent = SYNC_TXT[state] || '';
+    syncNoteEl.className = 'sync-note' + (state === 'offline' ? ' off' : '');
+  }
+  function sbHeaders(extra) {
+    var h = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Accept': 'application/json' };
+    if (extra) for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) h[k] = extra[k];
+    return h;
+  }
+  function sbFetch(url, opts, ms) {
+    if (!window.fetch) return Promise.reject(new Error('no fetch'));
+    var ctrl = null;
+    try { if (window.AbortController) { ctrl = new AbortController(); opts.signal = ctrl.signal; } } catch (e) {}
+    var p = fetch(url, opts);
+    if (!ctrl) return p;
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { try { ctrl.abort(); } catch (e) {} reject(new Error('timeout')); }, ms || 8000);
+      p.then(function (v) { clearTimeout(t); resolve(v); }, function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+  function sbRead() {
+    var url = SB_URL + '/rest/v1/fridges?id=eq.' + encodeURIComponent(SB_ROW) + '&select=sections';
+    return sbFetch(url, { method: 'GET', cache: 'no-store', headers: sbHeaders() }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (rows) {
+      if (!Array.isArray(rows) || !rows.length) return [];
+      var sec = rows[0] && rows[0].sections;
+      return normRecs(sec && sec.records);
+    });
+  }
+  function sbWrite(recs) {
+    var url = SB_URL + '/rest/v1/fridges?on_conflict=id';
+    return sbFetch(url, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify({ id: SB_ROW, sections: { records: recs }, updated_at: new Date().toISOString() })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  }
+
+  var top10 = loadTop10();
+  var syncSeq = 0;
+
+  function applyBestFromRecords() {
+    var top = top10.length ? top10[0].score : 0;
+    if (top > best) setBest(top);
+  }
+
+  function syncShared(highlightTs, onAfter) {
+    var my = ++syncSeq;
+    setSync('loading');
+    return sbRead().then(function (serverRecs) {
+      if (my !== syncSeq) return;
+      var server = normRecs(serverRecs);
+      var merged = mergeRecs(server, top10);
+      top10 = merged;
+      saveTop10();
+      applyBestFromRecords();
+      renderTop10(highlightTs);
+      if (sameRecs(merged, server)) {
+        setSync('synced');
+        if (onAfter) onAfter();
+        return;
+      }
+      return sbWrite(top10).then(function () {
+        if (my !== syncSeq) return;
+        setSync('synced');
+        if (onAfter) onAfter();
+      }, function () {
+        if (my !== syncSeq) return;
+        setSync('offline');
+        if (onAfter) onAfter();
+      });
+    }).catch(function () {
+      if (my !== syncSeq) return;
+      renderTop10(highlightTs);
+      setSync('offline');
+      if (onAfter) onAfter();
+    });
+  }
+
+  function saveRecordToServer(rec, onDone) {
+    var my = ++syncSeq;
+    var present = function () { return top10.some(function (r) { return recKey(r) === recKey(rec); }); };
+    setSync('loading');
+    sbRead().then(function (serverRecs) {
+      if (my !== syncSeq) return;
+      var server = normRecs(serverRecs);
+      top10 = mergeRecs([rec], server, top10);
+      saveTop10();
+      applyBestFromRecords();
+      renderTop10(rec.ts);
+      var kept = present();
+      if (onDone) onDone(kept, 'pending');
+      return sbWrite(top10).then(function () {
+        if (my !== syncSeq) return;
+        setSync('synced');
+        if (onDone) onDone(kept, 'synced');
+      }, function () {
+        if (my !== syncSeq) return;
+        setSync('offline');
+        if (onDone) onDone(kept, 'offline');
+      });
+    }).catch(function () {
+      if (my !== syncSeq) return;
+      renderTop10(rec.ts);
+      setSync('offline');
+      if (onDone) onDone(present(), 'offline');
+    });
+  }
+
+  function todayStr() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '.' + p(d.getMonth() + 1) + '.' + p(d.getDate());
+  }
+  function qualifies(sc) {
+    if (!(sc > 0)) return false;
+    if (top10.length < 10) return true;
+    return sc >= top10[top10.length - 1].score;
+  }
+  function rankFor(sc) {
+    var n = 0;
+    for (var i = 0; i < top10.length; i++) if (top10[i].score > sc) n++;
+    return n + 1;
+  }
+
+  function renderTop10(highlightTs) {
+    if (!rankBody) return;
+    var html = '';
+    if (!top10.length) {
+      html = '<div class="rank-empty"><span class="big">🥇</span>아직 기록이 없어요.<br>게임이 끝나면 이름을 남겨 보세요.</div>';
+    } else {
+      for (var i = 0; i < top10.length; i++) {
+        var r = top10[i];
+        var cls = 'rank-row' + (i < 3 ? ' r' + (i + 1) : '') + (highlightTs && r.ts === highlightTs ? ' me' : '');
+        html += '<div class="' + cls + '">' +
+          '<span class="rr">' + (i + 1) + '</span>' +
+          '<span class="rn">' + escHTML(r.name) + '</span>' +
+          '<span class="rs">' + NUM(r.score) + '</span>' +
+          '<span class="rd">' + escHTML(r.date) + '</span>' +
+          '</div>';
+      }
+    }
+    rankBody.innerHTML = html;
+  }
+
+  function openTop10(highlightTs, noSync) {
+    renderTop10(highlightTs);
+    rankAgainBtn.hidden = !over;
+    topOverlay.classList.add('show');
+    if (!noSync) syncShared(highlightTs);
+  }
+  function closeTop10() { topOverlay.classList.remove('show'); }
+
+  btnTop.addEventListener('click', function () { openTop10(null); });
+  rankClose.addEventListener('click', closeTop10);
+  topOverlay.addEventListener('click', function (e) { if (e.target === topOverlay) closeTop10(); });
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeTop10(); });
+
+  /* ================= game-over save box ================= */
+  var saving = false, savedThisGame = false;
+
+  function setupSaveBox() {
+    var ok = qualifies(score);
+    nameInput.value = load(NAME_KEY, '');
+    nameInput.disabled = !ok;
+    nameInput.classList.remove('warn');
+    saveRecBtn.disabled = !ok;
+    saveRecBtn.textContent = '기록 저장';
+    saveRecBtn.classList.remove('done');
+    saveNote.classList.remove('warn');
+    saveBox.style.display = '';
+    if (!ok) {
+      nameInput.placeholder = 'TOP 10 밖';
+      saveNote.textContent = top10.length
+        ? '아쉬워요, TOP 10 밖이에요 · 10위 ' + NUM(top10[top10.length - 1].score) + '점'
+        : '0점은 기록되지 않아요';
+      saveNote.classList.add('warn');
+    } else {
+      nameInput.placeholder = '이름 (예: 지수)';
+      saveNote.textContent = top10.length
+        ? '🏆 ' + rankFor(score) + '위 기록을 남길 수 있어요'
+        : '🏆 첫 기록을 남겨 보세요';
+    }
+  }
+
+  function onSaveRecord() {
+    if (saving || savedThisGame) return;
+    if (!qualifies(score)) return;
+    var name = nameInput.value.replace(/\s+/g, ' ').trim().slice(0, 12);
+    if (!name) {
+      nameInput.classList.remove('warn');
+      void nameInput.offsetWidth;
+      nameInput.classList.add('warn');
+      saveNote.textContent = '이름을 입력해 주세요';
+      saveNote.classList.add('warn');
+      try { nameInput.focus(); } catch (e) {}
+      return;
+    }
+    saving = true;
+    save(NAME_KEY, name);
+    nameInput.value = name;
+    nameInput.disabled = true;
+    saveRecBtn.disabled = true;
+    saveRecBtn.textContent = '저장 중…';
+    saveNode('전체 기기 순위표에 저장하는 중…');
+
+    var rec = { name: name, score: score, date: todayStr(), ts: Date.now() };
+    top10 = mergeRecs([rec], top10);
+    saveTop10();
+    applyBestFromRecords();
+    openTop10(rec.ts, true);
+
+    saveRecordToServer(rec, function (kept, state) {
+      if (state === 'pending') return;
+      saving = false;
+      if (!kept) {
+        saveRecBtn.disabled = true;
+        saveRecBtn.textContent = 'TOP 10 밖';
+        saveNote.textContent = '아쉬워요, TOP 10 밖이에요';
+        saveNote.classList.add('warn');
+        savedThisGame = true;
+        return;
+      }
+      savedThisGame = true;
+      saveRecBtn.disabled = true;
+      saveRecBtn.textContent = '저장됨 ✓';
+      saveNote.classList.remove('warn');
+      saveNote.textContent = state === 'synced'
+        ? '기록을 저장했어요 · 전체 기기 공유'
+        : '이 기기에 저장했어요 · 연결되면 자동 공유';
+    });
+  }
+  function saveNode(t) { saveNote.textContent = t; saveNote.classList.remove('warn'); }
+  saveRecBtn.addEventListener('click', onSaveRecord);
+  nameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); onSaveRecord(); } });
+
+  /* ================= resize ================= */
+  var rzTimer = null;
+  window.addEventListener('resize', function () {
+    if (rzTimer) clearTimeout(rzTimer);
+    rzTimer = setTimeout(function () { renderTray(); }, 120);
+  });
+  window.addEventListener('online', function () { if (top10.length) syncShared(null); });
+
+  /* ================= test hooks ================= */
+  window.__jisuh = {
+    board: function () { return grid.slice(); },
+    pieces: function () {
+      return pieces.map(function (p) { return p ? { id: p.id, color: p.color, w: p.w, h: p.h, size: p.size, cells: p.cells } : null; });
+    },
+    score: function () { return score; },
+    best: function () { return best; },
+    over: function () { return over; },
+    setBoard: function (rows) {
+      for (var r = 0; r < SIZE; r++) {
+        var row = rows[r] || [];
+        for (var c = 0; c < SIZE; c++) {
+          var v = row[c];
+          grid[idx(r, c)] = v && v !== '.' ? v : null;
+        }
+      }
+      drawAll();
+    },
+    setPieces: function (list) {
+      pieces = [0, 1, 2].map(function (i) {
+        var d = list && list[i];
+        if (!d) return null;
+        return makePiece(d.id || 'dot', d.color || 'pink');
+      });
+      renderTray();
+    },
+    place: function (i, r, c) { return placePiece(i, r, c); },
+    cellRect: function (r, c) {
+      var b = cells[idx(r, c)].el.getBoundingClientRect();
+      return { x: b.left, y: b.top, w: b.width, h: b.height };
+    },
+    slotRect: function (i) { return slots[i].getBoundingClientRect(); },
+    cellSize: function () { return boardPitch(); },
+    fast: function (on) { CLEAR_MS = on ? 0 : 280; DROP_MS = on ? 0 : 120; return [CLEAR_MS, DROP_MS]; },
+    newGame: function () { restart(); },
+    forceGameOver: function () { over = false; pieces = [makePiece('sq3', 'pink'), makePiece('sq3', 'pink'), makePiece('sq3', 'pink')]; showGameOver(); },
+    records: function () { return top10.slice(); },
+    submitRecord: function (name, sc) {
+      var rec = { name: String(name).slice(0, 12), score: sc, date: todayStr(), ts: Date.now() };
+      var kept = qualifies(sc);
+      top10 = mergeRecs([rec], top10);
+      saveTop10();
+      applyBestFromRecords();
+      renderTop10(rec.ts);
+      saveRecordToServer(rec, function () {});
+      return { kept: kept, rank: rankFor(sc) };
+    },
+    openTop: function () { openTop10(null); },
+    closeTop: function () { closeTop10(); },
+    sync: function () { return syncShared(null); }
+  };
+
+  /* ================= boot ================= */
+  best = parseInt(load(BEST_KEY, '0'), 10) || 0;
+  bestEl.textContent = NUM(best);
+  restart();
+  applyBestFromRecords();
+  syncShared(null);
+})();
+</script>
+</body>
+</html>
